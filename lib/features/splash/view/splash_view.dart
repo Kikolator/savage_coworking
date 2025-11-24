@@ -17,22 +17,11 @@ class SplashView extends ConsumerStatefulWidget {
 }
 
 class _SplashViewState extends ConsumerState<SplashView> {
+  bool _hasInitialized = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(splashViewModelProvider.notifier).loadApp();
-    });
-
-    ref.listen<SplashState>(splashViewModelProvider, (previous, next) {
-      final destination = next.destination;
-      if (destination == null || !mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.go(destination.path);
-        }
-      });
-    });
   }
 
   void _handleRetry() {
@@ -42,6 +31,26 @@ class _SplashViewState extends ConsumerState<SplashView> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(splashViewModelProvider);
+
+    // Initialize app loading on first build
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(splashViewModelProvider.notifier).loadApp();
+      });
+    }
+
+    // Listen to state changes and navigate when destination is set
+    ref.listen<SplashState>(splashViewModelProvider, (previous, next) {
+      final destination = next.destination;
+      if (destination == null || !mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go(destination.path);
+        }
+      });
+    });
+
     final screenWidth = MediaQuery.of(context).size.width;
 
     if (screenWidth >= 1280) {
