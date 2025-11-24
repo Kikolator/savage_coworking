@@ -7,6 +7,7 @@ import 'package:savage_coworking/features/hot_desk_booking/view/hot_desk_booking
 import 'package:savage_coworking/features/splash/view/splash_view.dart';
 
 import 'app_route.dart';
+import 'go_router_refresh_stream.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -41,9 +42,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       }
 
       final user = authState.valueOrNull;
-      final isNavigatingToAuth = state.matchedLocation == AppRoute.auth.path;
-      final isNavigatingToHotDesk =
-          state.matchedLocation == AppRoute.hotDesk.path;
+      final location = state.matchedLocation;
+      final isNavigatingToSplash = location == AppRoute.splash.path;
+      final isNavigatingToAuth = location == AppRoute.auth.path;
+      final isNavigatingToHotDesk = location == AppRoute.hotDesk.path;
+
+      // If on splash, let it handle navigation
+      if (isNavigatingToSplash) {
+        return null;
+      }
 
       if (user == null && isNavigatingToHotDesk) {
         return AppRoute.auth.path;
