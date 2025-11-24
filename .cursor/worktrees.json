@@ -1,0 +1,7 @@
+{
+    "setup-worktree-unix": "setup-worktree-unix.sh",
+    "setup-worktree-windows": "setup-worktree-windows.ps1",
+    "setup-worktree": [
+      "echo 'Using generic fallback. For better support, define OS-specific scripts.'"
+    ]
+  }
