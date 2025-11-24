@@ -141,9 +141,10 @@ class _BookingFormCardState extends State<_BookingFormCard> {
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               Text(
                 'Book a desk',
                 style: Theme.of(context).textTheme.titleLarge,
@@ -240,6 +241,7 @@ class _BookingFormCardState extends State<_BookingFormCard> {
                 ),
               ),
             ],
+            ),
           ),
         ),
       ),
