@@ -93,4 +93,4 @@ Recommended Firestore composite indexes:
 
 - Users may read and write their own bookings.
 - Admin roles may read/write any booking within their workspace scope.
-- Firestore rules must enforce non-overlapping bookings by verifying that no conflicting document exists before write.
+- Firestore rules enforce ownership, status transitions, and field validation; repositories must reject overlapping bookings before persisting documents.

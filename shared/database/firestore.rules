@@ -19,6 +19,75 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
+    function isValidDeskBookingStatus(status) {
+      return status in ['pending', 'confirmed', 'checkedIn', 'completed', 'cancelled', 'noShow'];
+    }
+
+    function isValidDeskBookingSource(source) {
+      return source in ['app', 'admin', 'system'];
+    }
+
+    function durationMinutes(startAt, endAt) {
+      return (endAt.toMillis() - startAt.toMillis()) / (1000 * 60);
+    }
+
+    function hasValidDeskBookingCoreFields(data) {
+      return data.userId is string
+        && data.workspaceId is string
+        && data.deskId is string
+        && data.startAt is timestamp
+        && data.endAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && isValidDeskBookingStatus(data.status)
+        && isValidDeskBookingSource(data.source)
+        && data.endAt.toMillis() > data.startAt.toMillis()
+        && durationMinutes(data.startAt, data.endAt) >= 30;
+    }
+
+    function hasValidDeskBookingOptionals(data) {
+      return (('purpose' in data) ? data.purpose is string && data.purpose.size() <= 140 : true)
+        && (('repeatSeriesId' in data) ? data.repeatSeriesId is string && data.repeatSeriesId.size() <= 64 : true)
+        && (('cancellationReason' in data) ? data.cancellationReason is string && data.cancellationReason.size() <= 280 : true)
+        && (('cancelledBy' in data) ? data.cancelledBy is string : true)
+        && (('checkInAt' in data) ? data.checkInAt is timestamp : true)
+        && (('checkOutAt' in data) ? data.checkOutAt is timestamp : true)
+        && (('cancelledAt' in data) ? data.cancelledAt is timestamp : true);
+    }
+
+    function validDeskBookingCreate(data) {
+      return hasValidDeskBookingCoreFields(data)
+        && hasValidDeskBookingOptionals(data)
+        && data.startAt.toMillis() >= request.time.toMillis()
+        && data.createdAt == data.updatedAt
+        && data.status == 'pending';
+    }
+
+    function immutableDeskBookingFields(oldData, newData) {
+      return newData.userId == oldData.userId
+        && newData.workspaceId == oldData.workspaceId
+        && newData.deskId == oldData.deskId
+        && newData.startAt == oldData.startAt
+        && newData.endAt == oldData.endAt
+        && newData.source == oldData.source
+        && newData.createdAt == oldData.createdAt;
+    }
+
+    function validDeskBookingTransition(oldStatus, newStatus) {
+      return (oldStatus == 'pending' && (newStatus == 'confirmed' || newStatus == 'cancelled'))
+        || (oldStatus == 'confirmed' && (newStatus == 'checkedIn' || newStatus == 'cancelled'))
+        || (oldStatus == 'checkedIn' && (newStatus == 'completed' || newStatus == 'noShow'))
+        || newStatus == oldStatus
+        || isAdmin();
+    }
+
+    function validDeskBookingUpdate(oldData, newData) {
+      return hasValidDeskBookingCoreFields(newData)
+        && hasValidDeskBookingOptionals(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'minutes')
+        && (isAdmin() || (immutableDeskBookingFields(oldData, newData) && validDeskBookingTransition(oldData.status, newData.status)));
+    }
+
     allow write: if isAdmin();
     allow read: if isAdmin();
 
@@ -71,5 +140,20 @@ service cloud.firestore {
       // allow read: if resource.data.ownerId == documentId;
       allow read: if true;
     } 
+
+    match /deskBookings/{bookingId} {
+      allow create: if signedIn()
+        && (isOwner(request.resource.data.userId) || isAdmin())
+        && validDeskBookingCreate(request.resource.data);
+
+      allow read: if signedIn()
+        && (isOwner(resource.data.userId) || isAdmin());
+
+      allow update: if signedIn()
+        && (isAdmin() || isOwner(resource.data.userId))
+        && validDeskBookingUpdate(resource.data, request.resource.data);
+
+      allow delete: if isAdmin();
+    }
   }
 }

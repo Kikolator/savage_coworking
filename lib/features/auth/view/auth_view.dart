@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../viewmodel/auth_view_model.dart';
-import '../providers/auth_providers.dart';
 import 'auth_view.phone.dart';
 import 'auth_view.tablet.dart';
 import 'auth_view.desktop.dart';
