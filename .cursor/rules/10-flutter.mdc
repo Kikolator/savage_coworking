@@ -1,0 +1,43 @@
+---
+description: Apply Flutter + MVVM rules for Dart files.
+globs:
+  - "lib/**/*.dart"
+  - "test/**/*.dart"
+alwaysApply: false
+---
+
+# Flutter / Dart Rules
+
+When editing Flutter/Dart files:
+
+1. Load and follow:
+   - `/ai/stacks/flutter.md`
+   - `/ai/patterns/mvvm.md`
+   - `/ai/global/architecture-boundaries.md`
+   - `/ai/global/debugging.md`
+   - `/ai/global/dependencies.md`
+   - `/ai/global/naming.md`
+
+2. Architecture:
+   - UI (widgets) → ViewModel → Service → Repository → Firebase/API.
+   - UI MUST NOT contain business logic.
+   - ViewModels MUST NOT talk directly to Firestore/Firebase.
+   - Repositories MUST NOT contain UI or navigation.
+
+3. Example implementation:
+   - Use `/ai/examples/flutter/lib/features/auth/*` as the reference pattern for:
+     - `view/`
+     - `viewmodel/`
+     - `service/`
+     - `repository/`
+     - `models/`
+
+4. When creating a new feature:
+   - Create `lib/features/<feature>/` with the same subfolders.
+   - Use freezed + json_serializable for models.
+   - Integrate with Riverpod and go_router as described in `/ai/stacks/flutter.md`.
+
+5. Before finalizing changes:
+   - Run through `/ai/global/ai-quality-gate.md`.
+   - Ensure no architecture boundaries or hard rules are violated.
+   

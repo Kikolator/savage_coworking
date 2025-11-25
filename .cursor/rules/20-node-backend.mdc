@@ -1,0 +1,46 @@
+---
+description: Apply Node.js backend + Firebase rules.
+globs:
+  - "functions/src/**/*.ts"
+  - "src/modules/**/*.ts"
+  - "src/api/**/*.ts"
+alwaysApply: false
+---
+
+# Node.js / Backend Rules
+
+When editing backend TypeScript or Firebase Functions:
+
+1. Load and follow:
+   - `/ai/stacks/node.md`
+   - `/ai/global/api-contracts.md`
+   - `/ai/global/architecture-boundaries.md`
+   - `/ai/global/debugging.md`
+   - `/ai/global/dependencies.md`
+   - `/ai/global/naming.md`
+
+2. Architecture:
+   - HTTP/Event → Controller → Service → Repository → Firebase Admin.
+   - Controllers: I/O only (parse request, call service, format response).
+   - Services: business logic only.
+   - Repositories: Firestore/Storage/Auth access only.
+
+3. Example implementation:
+   - Use `/ai/examples/functions/src/modules/users/*` as the reference pattern:
+     - `user.controller.ts`
+     - `user.service.ts`
+     - `user.repository.ts`
+     - `user.types.ts`
+     - `user.validators.ts`
+     - `__tests__/user.service.test.ts`
+     - `api/routes/userRoutes.ts`
+
+4. API contracts:
+   - Request/response shapes MUST match `/shared/schemas/*` and `/shared/apis/APIS.md`.
+   - Update validators, types, and docs when changing schemas.
+
+5. Before finalizing changes:
+   - Run through `/ai/global/ai-quality-gate.md`.
+   - Ensure no direct Firestore calls from controllers.
+   - Ensure repositories do NOT throw HTTP responses.
+   

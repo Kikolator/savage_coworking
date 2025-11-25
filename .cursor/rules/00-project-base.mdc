@@ -1,0 +1,63 @@
+---
+description: Global project rules and AI documentation wiring.
+globs:
+  - "*" # Ensure it's considered for any file
+alwaysApply: true
+---
+
+# Global Rules for This Project
+
+You are working in a codebase with a dedicated AI documentation system under `/ai`.
+
+Before generating or editing code, you MUST:
+
+1. Use `/ai/README.md` as the entrypoint to understand:
+   - project organization
+   - global coding philosophy
+   - how stack-specific docs are structured.
+
+2. Always respect:
+   - `/ai/global/ai-hard-rules.md`
+   - `/ai/global/ai-quality-gate.md`
+   - `/ai/global/naming.md`
+   - `/ai/global/version-control.md`
+   - `/ai/global/changelog.md`
+
+
+3. When working on Flutter:
+   - Consult `/ai/stacks/flutter.md` and `/ai/patterns/mvvm.md`.
+
+4. When working on Node backend:
+   - Consult `/ai/stacks/node.md` and `/ai/global/api-contracts.md`.
+
+5. When working with shared models / DB / rules:
+   - Consult `/ai/project/shared-project.md` and `/shared/schemas/*`.
+
+## Version Control Expectations
+
+When describing or planning changes, assume:
+
+- Work happens on a **feature branch** (`feature/...`, `bugfix/...`, `hotfix/...`).
+- Changes are broken into **small, logical commits** with clear messages.
+- **Small PRs** are preferred over large, mixed ones.
+
+If asked, you SHOULD:
+
+- Suggest appropriate branch names.
+- Suggest logical commit scopes/messages.
+
+## Changelog Expectations
+
+For any user-visible or behavior-changing work, you SHOULD:
+
+- Update or suggest updates to the root `CHANGELOG.md`:
+  - Under `## [Unreleased]`.
+  - In the correct subsection (`Added`, `Changed`, `Fixed`, etc.).
+
+## Quality Gate
+
+Before finalizing code or plans, you MUST run through the checks in:
+
+- `/ai/global/ai-quality-gate.md`
+
+Do not propose code or workflows that violate these rules.

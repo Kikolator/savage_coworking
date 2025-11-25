@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../viewmodel/auth_view_model.dart';
 import '../providers/auth_providers.dart';
 import '../models/auth_failure.dart';
-import 'auth_view.phone.dart';
 
 class AuthViewTablet extends ConsumerStatefulWidget {
   const AuthViewTablet({super.key});

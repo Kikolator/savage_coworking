@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../viewmodel/auth_view_model.dart';
 import '../providers/auth_providers.dart';
 import '../models/auth_failure.dart';
-import 'auth_view.desktop.dart';
 
 class AuthViewMonitor extends ConsumerStatefulWidget {
   const AuthViewMonitor({super.key});
