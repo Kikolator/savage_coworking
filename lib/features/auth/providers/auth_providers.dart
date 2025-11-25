@@ -24,9 +24,18 @@ final authStateChangesProvider = StreamProvider<AuthUser?>((ref) {
   return repo.authStateChanges;
 });
 
-final authViewModelProvider =
-    StateNotifierProvider<AuthViewModel, AuthState>((ref) {
+final authViewModelProvider = StateNotifierProvider<AuthViewModel, AuthState>((
+  ref,
+) {
   final service = ref.watch(authServiceProvider);
-  return AuthViewModel(service);
-});
+  final viewModel = AuthViewModel(service);
 
+  // Sync view model with Firebase auth state changes
+  ref.listen<AsyncValue<AuthUser?>>(authStateChangesProvider, (previous, next) {
+    if (next.hasValue) {
+      viewModel.syncUser(next.value);
+    }
+  });
+
+  return viewModel;
+});
