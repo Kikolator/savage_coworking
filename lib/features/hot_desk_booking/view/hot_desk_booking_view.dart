@@ -29,9 +29,9 @@ class HotDeskBookingView extends ConsumerWidget {
 
     final userId = authState.user!.id;
     final state = ref.watch(hotDeskBookingViewModelProvider(userId));
-    final viewModel = ref.read(
-      hotDeskBookingViewModelProvider(userId).notifier,
-    );
+    final viewModel =
+        ref.read(hotDeskBookingViewModelProvider(userId).notifier);
+    final authViewModel = ref.read(authViewModelProvider.notifier);
 
     ref.listen<HotDeskBookingFailure?>(
       hotDeskBookingViewModelProvider(userId).select((state) => state.failure),
@@ -62,7 +62,7 @@ class HotDeskBookingView extends ConsumerWidget {
       onCancelBooking: viewModel.cancelBooking,
       onCheckIn: viewModel.checkIn,
       onComplete: viewModel.complete,
-      onLogout: viewModel.logout,
+      onLogout: authViewModel.logout,
       onNavigateToAdmin: () => context.go(AppRoute.admin.path),
     );
 
