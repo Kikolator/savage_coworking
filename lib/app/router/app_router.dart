@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:savage_coworking/features/admin/view/admin_dashboard_view.dart';
 import 'package:savage_coworking/features/auth/providers/auth_providers.dart';
 import 'package:savage_coworking/features/auth/view/auth_view.dart';
 import 'package:savage_coworking/features/hot_desk_booking/view/hot_desk_booking_view.dart';
@@ -34,6 +35,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: AppRoute.hotDesk.name,
         builder: (context, state) => const HotDeskBookingView(),
       ),
+      GoRoute(
+        path: AppRoute.admin.path,
+        name: AppRoute.admin.name,
+        builder: (context, state) => const AdminDashboardView(),
+      ),
     ],
     redirect: (context, state) {
       final authState = ref.read(authStateChangesProvider);
@@ -46,17 +52,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isNavigatingToSplash = location == AppRoute.splash.path;
       final isNavigatingToAuth = location == AppRoute.auth.path;
       final isNavigatingToHotDesk = location == AppRoute.hotDesk.path;
+      final isNavigatingToAdmin = location == AppRoute.admin.path;
 
       // If on splash, let it handle navigation
       if (isNavigatingToSplash) {
         return null;
       }
 
-      if (user == null && isNavigatingToHotDesk) {
+      if (user == null && (isNavigatingToHotDesk || isNavigatingToAdmin)) {
         return AppRoute.auth.path;
       }
 
       if (user != null && isNavigatingToAuth) {
+        return AppRoute.hotDesk.path;
+      }
+
+      if (user != null && isNavigatingToAdmin && !user.isAdmin) {
         return AppRoute.hotDesk.path;
       }
 
