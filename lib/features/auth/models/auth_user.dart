@@ -10,6 +10,7 @@ class AuthUser with _$AuthUser {
     required String email,
     String? displayName,
     String? photoUrl,
+    @Default(false) bool isAdmin,
   }) = _AuthUser;
 
   factory AuthUser.fromJson(Map<String, dynamic> json) =>

@@ -8,26 +8,18 @@ class AuthRepository {
   AuthRepository(this._firebaseAuth);
 
   Stream<AuthUser?> get authStateChanges {
-    return _firebaseAuth.authStateChanges().map((user) {
+    return _firebaseAuth.authStateChanges().asyncMap((user) async {
       if (user == null) return null;
-      return AuthUser(
-        id: user.uid,
-        email: user.email ?? '',
-        displayName: user.displayName,
-        photoUrl: user.photoURL,
-      );
+      final isAdmin = await _fetchIsAdmin(user);
+      return _mapFirebaseUser(user, isAdmin: isAdmin);
     });
   }
 
   Future<AuthUser?> getCurrentUser() async {
     final user = _firebaseAuth.currentUser;
     if (user == null) return null;
-    return AuthUser(
-      id: user.uid,
-      email: user.email ?? '',
-      displayName: user.displayName,
-      photoUrl: user.photoURL,
-    );
+    final isAdmin = await _fetchIsAdmin(user);
+    return _mapFirebaseUser(user, isAdmin: isAdmin);
   }
 
   Future<(AuthUser?, AuthFailure?)> signInWithEmailPassword({
@@ -43,13 +35,9 @@ class AuthRepository {
       if (user == null) {
         return (null, const AuthFailure.unexpected('No user returned'));
       }
+      final isAdmin = await _fetchIsAdmin(user);
       return (
-        AuthUser(
-          id: user.uid,
-          email: user.email ?? '',
-          displayName: user.displayName,
-          photoUrl: user.photoURL,
-        ),
+        _mapFirebaseUser(user, isAdmin: isAdmin),
         null,
       );
     } on fb.FirebaseAuthException catch (e) {
@@ -85,25 +73,17 @@ class AuthRepository {
         await user.reload();
         final updatedUser = _firebaseAuth.currentUser;
         if (updatedUser != null) {
+          final isAdmin = await _fetchIsAdmin(updatedUser);
           return (
-            AuthUser(
-              id: updatedUser.uid,
-              email: updatedUser.email ?? '',
-              displayName: updatedUser.displayName,
-              photoUrl: updatedUser.photoURL,
-            ),
+            _mapFirebaseUser(updatedUser, isAdmin: isAdmin),
             null,
           );
         }
       }
 
+      final isAdmin = await _fetchIsAdmin(user);
       return (
-        AuthUser(
-          id: user.uid,
-          email: user.email ?? '',
-          displayName: user.displayName,
-          photoUrl: user.photoURL,
-        ),
+        _mapFirebaseUser(user, isAdmin: isAdmin),
         null,
       );
     } on fb.FirebaseAuthException catch (e) {
@@ -128,6 +108,33 @@ class AuthRepository {
 
   Future<void> sendPasswordResetEmail(String email) async {
     await _firebaseAuth.sendPasswordResetEmail(email: email);
+  }
+
+  AuthUser _mapFirebaseUser(
+    fb.User user, {
+    bool isAdmin = false,
+  }) {
+    return AuthUser(
+      id: user.uid,
+      email: user.email ?? '',
+      displayName: user.displayName,
+      photoUrl: user.photoURL,
+      isAdmin: isAdmin,
+    );
+  }
+
+  Future<bool> _fetchIsAdmin(fb.User user) async {
+    try {
+      final tokenResult = await user.getIdTokenResult(true);
+      final claims = tokenResult.claims ?? <String, dynamic>{};
+      final claimValue = claims['admin'];
+      if (claimValue is bool) {
+        return claimValue;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

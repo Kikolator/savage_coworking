@@ -25,6 +25,7 @@ mixin _$AuthUser {
   String get email => throw _privateConstructorUsedError;
   String? get displayName => throw _privateConstructorUsedError;
   String? get photoUrl => throw _privateConstructorUsedError;
+  bool get isAdmin => throw _privateConstructorUsedError;
 
   /// Serializes this AuthUser to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -41,7 +42,13 @@ abstract class $AuthUserCopyWith<$Res> {
   factory $AuthUserCopyWith(AuthUser value, $Res Function(AuthUser) then) =
       _$AuthUserCopyWithImpl<$Res, AuthUser>;
   @useResult
-  $Res call({String id, String email, String? displayName, String? photoUrl});
+  $Res call({
+    String id,
+    String email,
+    String? displayName,
+    String? photoUrl,
+    bool isAdmin,
+  });
 }
 
 /// @nodoc
@@ -63,6 +70,7 @@ class _$AuthUserCopyWithImpl<$Res, $Val extends AuthUser>
     Object? email = null,
     Object? displayName = freezed,
     Object? photoUrl = freezed,
+    Object? isAdmin = null,
   }) {
     return _then(
       _value.copyWith(
@@ -81,7 +89,11 @@ class _$AuthUserCopyWithImpl<$Res, $Val extends AuthUser>
             photoUrl: freezed == photoUrl
                 ? _value.photoUrl
                 : photoUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
+                    as String?,
+            isAdmin: null == isAdmin
+                ? _value.isAdmin
+                : isAdmin // ignore: cast_nullable_to_non_nullable
+                    as bool,
           )
           as $Val,
     );
@@ -97,7 +109,13 @@ abstract class _$$AuthUserImplCopyWith<$Res>
   ) = __$$AuthUserImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String email, String? displayName, String? photoUrl});
+  $Res call({
+    String id,
+    String email,
+    String? displayName,
+    String? photoUrl,
+    bool isAdmin,
+  });
 }
 
 /// @nodoc
@@ -118,6 +136,7 @@ class __$$AuthUserImplCopyWithImpl<$Res>
     Object? email = null,
     Object? displayName = freezed,
     Object? photoUrl = freezed,
+    Object? isAdmin = null,
   }) {
     return _then(
       _$AuthUserImpl(
@@ -136,7 +155,11 @@ class __$$AuthUserImplCopyWithImpl<$Res>
         photoUrl: freezed == photoUrl
             ? _value.photoUrl
             : photoUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
+                    as String?,
+        isAdmin: null == isAdmin
+            ? _value.isAdmin
+            : isAdmin // ignore: cast_nullable_to_non_nullable
+                as bool,
       ),
     );
   }
@@ -150,6 +173,7 @@ class _$AuthUserImpl implements _AuthUser {
     required this.email,
     this.displayName,
     this.photoUrl,
+    this.isAdmin = false,
   });
 
   factory _$AuthUserImpl.fromJson(Map<String, dynamic> json) =>
@@ -163,10 +187,12 @@ class _$AuthUserImpl implements _AuthUser {
   final String? displayName;
   @override
   final String? photoUrl;
+  @override
+  final bool isAdmin;
 
   @override
   String toString() {
-    return 'AuthUser(id: $id, email: $email, displayName: $displayName, photoUrl: $photoUrl)';
+    return 'AuthUser(id: $id, email: $email, displayName: $displayName, photoUrl: $photoUrl, isAdmin: $isAdmin)';
   }
 
   @override
@@ -179,13 +205,14 @@ class _$AuthUserImpl implements _AuthUser {
             (identical(other.displayName, displayName) ||
                 other.displayName == displayName) &&
             (identical(other.photoUrl, photoUrl) ||
-                other.photoUrl == photoUrl));
+                other.photoUrl == photoUrl) &&
+            (identical(other.isAdmin, isAdmin) || other.isAdmin == isAdmin));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, email, displayName, photoUrl);
+      Object.hash(runtimeType, id, email, displayName, photoUrl, isAdmin);
 
   /// Create a copy of AuthUser
   /// with the given fields replaced by the non-null parameter values.
@@ -207,6 +234,7 @@ abstract class _AuthUser implements AuthUser {
     required final String email,
     final String? displayName,
     final String? photoUrl,
+    final bool isAdmin,
   }) = _$AuthUserImpl;
 
   factory _AuthUser.fromJson(Map<String, dynamic> json) =
@@ -220,6 +248,8 @@ abstract class _AuthUser implements AuthUser {
   String? get displayName;
   @override
   String? get photoUrl;
+  @override
+  bool get isAdmin;
 
   /// Create a copy of AuthUser
   /// with the given fields replaced by the non-null parameter values.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../auth/view/widgets/user_menu_button.dart';
 import '../../models/hot_desk_booking.dart';
 import '../../models/hot_desk_booking_request.dart';
 import '../../models/hot_desk_booking_status.dart';
@@ -23,7 +24,19 @@ class HotDeskBookingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Hot Desk Booking')),
+      appBar: AppBar(
+        title: const Text('Hot Desk Booking'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: UserMenuButton(
+              user: props.user,
+              onLogout: props.onLogout,
+              onAdminNavigate: props.onNavigateToAdmin,
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Column(
           children: [

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/router/app_route.dart';
+import '../../auth/models/auth_user.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../auth/view/auth_view.dart';
 import '../models/hot_desk_booking_request.dart';
@@ -26,9 +29,9 @@ class HotDeskBookingView extends ConsumerWidget {
 
     final userId = authState.user!.id;
     final state = ref.watch(hotDeskBookingViewModelProvider(userId));
-    final viewModel = ref.read(
-      hotDeskBookingViewModelProvider(userId).notifier,
-    );
+    final viewModel =
+        ref.read(hotDeskBookingViewModelProvider(userId).notifier);
+    final authViewModel = ref.read(authViewModelProvider.notifier);
 
     ref.listen<HotDeskBookingFailure?>(
       hotDeskBookingViewModelProvider(userId).select((state) => state.failure),
@@ -54,10 +57,13 @@ class HotDeskBookingView extends ConsumerWidget {
 
     final props = HotDeskBookingViewProps(
       state: state,
+      user: authState.user!,
       onCreateBooking: viewModel.createBooking,
       onCancelBooking: viewModel.cancelBooking,
       onCheckIn: viewModel.checkIn,
       onComplete: viewModel.complete,
+      onLogout: authViewModel.logout,
+      onNavigateToAdmin: () => context.go(AppRoute.admin.path),
     );
 
     return builder(props);
@@ -80,13 +86,17 @@ typedef HotDeskBookingStatefulBuilder =
 class HotDeskBookingViewProps {
   const HotDeskBookingViewProps({
     required this.state,
+    required this.user,
     required this.onCreateBooking,
     required this.onCancelBooking,
     required this.onCheckIn,
     required this.onComplete,
+    required this.onLogout,
+    required this.onNavigateToAdmin,
   });
 
   final HotDeskBookingState state;
+  final AuthUser user;
   final Future<HotDeskBookingFailure?> Function(HotDeskBookingRequest request)
   onCreateBooking;
   final Future<HotDeskBookingFailure?> Function(
@@ -96,4 +106,6 @@ class HotDeskBookingViewProps {
   onCancelBooking;
   final Future<HotDeskBookingFailure?> Function(String bookingId) onCheckIn;
   final Future<HotDeskBookingFailure?> Function(String bookingId) onComplete;
+  final Future<void> Function() onLogout;
+  final VoidCallback onNavigateToAdmin;
 }
