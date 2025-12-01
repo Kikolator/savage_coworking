@@ -7,7 +7,6 @@ import 'firebase_options.dart';
 import 'core/config/firebase_emulator_config.dart';
 import 'core/debug/debug_config.dart';
 import 'core/debug/debug_provider_observer.dart';
-import 'features/hot_desk_booking/view/hot_desk_booking_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

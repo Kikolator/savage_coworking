@@ -2,7 +2,7 @@ import 'package:savage_coworking/app/router/app_route.dart';
 
 enum SplashDestination {
   auth(AppRoute.auth),
-  hotDesk(AppRoute.hotDesk);
+  home(AppRoute.home);
 
   const SplashDestination(this.route);
 
