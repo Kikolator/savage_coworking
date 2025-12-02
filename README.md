@@ -8,6 +8,9 @@ Flutter + Firebase workspace experience for booking hot desks, handling auth, an
 - Firebase Cloud Functions (TypeScript / Node 24) provide backend automation.
 - Shared contracts live in `/shared` and AI contributor guidelines live in `/ai`.
 
+## Notes from Kikolator
+This project is created in the first place to manage our coworking space. By making it open source we hope to help other boutique coworking owners make life a little bit easier.
+
 ## Requirements
 - Flutter SDK ≥ 3.10 (`flutter doctor` should pass for your target platforms)
 - Node.js 24.x with npm

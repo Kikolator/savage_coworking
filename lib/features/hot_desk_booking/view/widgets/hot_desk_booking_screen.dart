@@ -23,46 +23,31 @@ class HotDeskBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Hot Desk Booking'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: UserMenuButton(
-              user: props.user,
-              onLogout: props.onLogout,
-              onAdminNavigate: props.onNavigateToAdmin,
-            ),
+    return SafeArea(
+      child: Column(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: props.state.isSubmitting
+                ? const LinearProgressIndicator()
+                : const SizedBox.shrink(),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: props.state.isSubmitting
-                  ? const LinearProgressIndicator()
-                  : const SizedBox.shrink(),
-            ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: maxWidth ?? double.infinity,
-                  ),
-                  child: Padding(
-                    padding: padding,
-                    child: props.state.isLoading
-                        ? const _LoadingState()
-                        : _Content(props: props, twoColumn: twoColumn),
-                  ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth ?? double.infinity,
+                ),
+                child: Padding(
+                  padding: padding,
+                  child: props.state.isLoading
+                      ? const _LoadingState()
+                      : _Content(props: props, twoColumn: twoColumn),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

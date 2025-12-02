@@ -53,6 +53,9 @@ dependencies:
   intl: ^0.19.0
   collection: ^1.18.0
 
+  # Responsive Builder
+  responsive_builder: ^0.7.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -50,8 +50,7 @@ Also see `/ai/global/ui-ux.md` for general UX principles.
 
 Use **responsive layouts** with these breakpoints:
 
-- `≥ 1280` px: **monitor** (large desktop)
-- `1279 – 769` px: **desktop**
+- `≥ 769` px: **desktop**
 - `768 – 481` px: **tablet**
 - `480 – 0` px: **phone**
 
@@ -61,10 +60,9 @@ Pattern per feature:
   - `view/<feature>_view.dart`
   - Uses a responsive builder to select the appropriate layout.
 - Device-specific view files:
-  - `view/<feature>_view.phone.dart`
+  - `view/<feature>_view.mobile.dart`
   - `view/<feature>_view.tablet.dart`
   - `view/<feature>_view.desktop.dart`
-  - `view/<feature>_view.monitor.dart`
 
 The main `<feature>_view.dart`:
 
@@ -74,6 +72,23 @@ The main `<feature>_view.dart`:
 - Delegates layout to device-specific view widgets.
 
 Use a responsive layout helper (e.g. `responsive_builder`) or an equivalent internal abstraction to implement these breakpoints consistently across features.
+```dart
+class ExampleView extends StatelessWidget {
+  const ExampleView({super.key});
+
+  @override
+  Widget builder(
+    BuildContext context,
+    Widget? child,
+  ) {
+    return ScreenTypeLayout.builder(
+      mobile: (_) => const ExampleViewMobile(),
+      tablet: (_) => const ExampleViewTablet(),
+      desktop: (_) => const ExampleViewDesktop(),
+    );
+  }
+}
+```
 
 ### Platform Awareness (Cupertino vs Material)
 

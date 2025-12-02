@@ -112,9 +112,9 @@ For all front-end work, follow the UI/UX foundations defined in:
 Key principles the AI must follow:
 
 - Use **responsive layouts** based on the project breakpoints  
-  (monitor ≥1280, desktop 1279–769, tablet 768–481, phone ≤480).
+  (desktop ≥769, tablet 768–481, mobile ≤480).
 - Use a **single feature view** that delegates to device-specific views  
-  (`view.phone.dart`, `view.tablet.dart`, `view.desktop.dart`, `view.monitor.dart`).
+  (`view.mobile.dart`, `view.tablet.dart`, `view.desktop.dart`).
 - Make UI **platform-aware**:
   - Cupertino/glass style on Apple platforms
   - Material on Android & Web.
