@@ -36,10 +36,7 @@ class AuthRepository {
         return (null, const AuthFailure.unexpected('No user returned'));
       }
       final isAdmin = await _fetchIsAdmin(user);
-      return (
-        _mapFirebaseUser(user, isAdmin: isAdmin),
-        null,
-      );
+      return (_mapFirebaseUser(user, isAdmin: isAdmin), null);
     } on fb.FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password' || e.code == 'user-not-found') {
         return (null, const AuthFailure.invalidCredentials());
@@ -74,18 +71,12 @@ class AuthRepository {
         final updatedUser = _firebaseAuth.currentUser;
         if (updatedUser != null) {
           final isAdmin = await _fetchIsAdmin(updatedUser);
-          return (
-            _mapFirebaseUser(updatedUser, isAdmin: isAdmin),
-            null,
-          );
+          return (_mapFirebaseUser(updatedUser, isAdmin: isAdmin), null);
         }
       }
 
       final isAdmin = await _fetchIsAdmin(user);
-      return (
-        _mapFirebaseUser(user, isAdmin: isAdmin),
-        null,
-      );
+      return (_mapFirebaseUser(user, isAdmin: isAdmin), null);
     } on fb.FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
         return (null, const AuthFailure.emailAlreadyInUse());
@@ -110,10 +101,7 @@ class AuthRepository {
     await _firebaseAuth.sendPasswordResetEmail(email: email);
   }
 
-  AuthUser _mapFirebaseUser(
-    fb.User user, {
-    bool isAdmin = false,
-  }) {
+  AuthUser _mapFirebaseUser(fb.User user, {bool isAdmin = false}) {
     return AuthUser(
       id: user.uid,
       email: user.email ?? '',
@@ -137,4 +125,3 @@ class AuthRepository {
     }
   }
 }
-
