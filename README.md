@@ -25,8 +25,12 @@ flutter pub get
 # 2. Generate freezed/json model code
 dart run build_runner build --delete-conflicting-outputs
 
-# 3. Install Cloud Functions dependencies
-(cd functions && npm install)
+# 3. From the functions directory, install Cloud Functions dependencies
+cd functions
+npm install
+
+# 4. and build Cloud Functions
+npm run build
 ```
 
 If you point the app at a new Firebase project, regenerate `lib/firebase_options.dart` with `flutterfire configure`.
