@@ -5,15 +5,13 @@ import '../widgets/profile_menu_drawer.dart';
 import '../widgets/sidebar_navigation.dart';
 
 class DashboardViewTablet extends ConsumerStatefulWidget {
-  const DashboardViewTablet({
-    super.key,
-    required this.child,
-  });
+  const DashboardViewTablet({super.key, required this.child});
 
   final Widget child;
 
   @override
-  ConsumerState<DashboardViewTablet> createState() => _DashboardViewTabletState();
+  ConsumerState<DashboardViewTablet> createState() =>
+      _DashboardViewTabletState();
 }
 
 class _DashboardViewTabletState extends ConsumerState<DashboardViewTablet> {
@@ -38,14 +36,10 @@ class _DashboardViewTabletState extends ConsumerState<DashboardViewTablet> {
       body: Row(
         children: [
           const SidebarNavigation(),
-          Expanded(
-            child: widget.child,
-          ),
+          Expanded(child: widget.child),
         ],
       ),
       endDrawer: const ProfileMenuDrawer(),
     );
   }
 }
-
-

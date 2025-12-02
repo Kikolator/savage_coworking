@@ -5,15 +5,13 @@ import '../widgets/profile_menu_drawer.dart';
 import '../widgets/sidebar_navigation.dart';
 
 class DashboardViewDesktop extends ConsumerStatefulWidget {
-  const DashboardViewDesktop({
-    super.key,
-    required this.child,
-  });
+  const DashboardViewDesktop({super.key, required this.child});
 
   final Widget child;
 
   @override
-  ConsumerState<DashboardViewDesktop> createState() => _DashboardViewDesktopState();
+  ConsumerState<DashboardViewDesktop> createState() =>
+      _DashboardViewDesktopState();
 }
 
 class _DashboardViewDesktopState extends ConsumerState<DashboardViewDesktop> {
@@ -38,14 +36,10 @@ class _DashboardViewDesktopState extends ConsumerState<DashboardViewDesktop> {
       body: Row(
         children: [
           const SidebarNavigation(),
-          Expanded(
-            child: widget.child,
-          ),
+          Expanded(child: widget.child),
         ],
       ),
       endDrawer: const ProfileMenuDrawer(),
     );
   }
 }
-
-
