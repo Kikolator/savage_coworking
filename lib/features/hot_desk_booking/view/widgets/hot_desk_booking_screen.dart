@@ -22,34 +22,31 @@ class HotDeskBookingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Hot Desk Booking')),
-      body: SafeArea(
-        child: Column(
-          children: [
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              child: props.state.isSubmitting
-                  ? const LinearProgressIndicator()
-                  : const SizedBox.shrink(),
-            ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: maxWidth ?? double.infinity,
-                  ),
-                  child: Padding(
-                    padding: padding,
-                    child: props.state.isLoading
-                        ? const _LoadingState()
-                        : _Content(props: props, twoColumn: twoColumn),
-                  ),
+    return SafeArea(
+      child: Column(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: props.state.isSubmitting
+                ? const LinearProgressIndicator()
+                : const SizedBox.shrink(),
+          ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth ?? double.infinity,
+                ),
+                child: Padding(
+                  padding: padding,
+                  child: props.state.isLoading
+                      ? const _LoadingState()
+                      : _Content(props: props, twoColumn: twoColumn),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

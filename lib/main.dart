@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
 import 'core/config/firebase_emulator_config.dart';
 import 'core/debug/debug_config.dart';
 import 'core/debug/debug_provider_observer.dart';
-import 'features/hot_desk_booking/view/hot_desk_booking_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,10 +32,8 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'Savage Coworking',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       routerConfig: router,
     );
   }

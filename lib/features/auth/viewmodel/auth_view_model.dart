@@ -8,17 +8,9 @@ class AuthState {
   final AuthUser? user;
   final AuthFailure? failure;
 
-  const AuthState({
-    this.isLoading = false,
-    this.user,
-    this.failure,
-  });
+  const AuthState({this.isLoading = false, this.user, this.failure});
 
-  AuthState copyWith({
-    bool? isLoading,
-    AuthUser? user,
-    AuthFailure? failure,
-  }) {
+  AuthState copyWith({bool? isLoading, AuthUser? user, AuthFailure? failure}) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       user: user ?? this.user,
@@ -82,5 +74,11 @@ class AuthViewModel extends StateNotifier<AuthState> {
   void clearFailure() {
     state = state.copyWith(failure: null);
   }
-}
 
+  void syncUser(AuthUser? user) {
+    // Only update if user actually changed to avoid unnecessary rebuilds
+    if (state.user?.id != user?.id) {
+      state = state.copyWith(user: user);
+    }
+  }
+}
