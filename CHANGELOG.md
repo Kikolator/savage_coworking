@@ -14,3 +14,6 @@ All notable changes to this project will be documented in this file.
 - Bottom navigation bar now follows Material 3 and Cupertino design guidelines with proper spacing, icon sizing, and accessibility support.
 - Bottom navigation bar uses Material 3 on web platforms regardless of underlying OS.
 
+### Changed
+- Rewrote `README.md` with project overview, setup, and workflow guidance.
+
