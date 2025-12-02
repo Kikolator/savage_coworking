@@ -37,7 +37,7 @@ class AdminDashboardView extends ConsumerWidget {
       userMenuBuilder: (context) => UserMenuButton(
         user: user,
         onLogout: authViewModel.logout,
-        onAdminNavigate: () => context.go(AppRoute.admin.path),
+        onUserDashboardNavigate: () => context.go(AppRoute.home.path),
       ),
       onSectionSelected: viewModel.selectSection,
       onRefresh: viewModel.loadDashboard,

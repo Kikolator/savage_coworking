@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/router/app_route.dart';
 import '../../auth/providers/auth_providers.dart';
 
 class ProfileMenuDrawer extends ConsumerWidget {
@@ -60,6 +61,18 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 // TODO: Navigate to preferences
               },
             ),
+            if (user?.isAdmin == true) ...[
+              const Divider(),
+              _buildMenuItem(
+                context,
+                icon: Icons.space_dashboard_outlined,
+                title: 'Admin Dashboard',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go(AppRoute.admin.path);
+                },
+              ),
+            ],
             const Spacer(),
             const Divider(),
             _buildMenuItem(
@@ -119,6 +132,18 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 // TODO: Navigate to preferences
               },
             ),
+            if (user?.isAdmin == true) ...[
+              const Divider(),
+              _buildCupertinoMenuItem(
+                context,
+                icon: CupertinoIcons.square_grid_2x2,
+                title: 'Admin Dashboard',
+                onTap: () {
+                  Navigator.pop(context);
+                  context.go(AppRoute.admin.path);
+                },
+              ),
+            ],
             const Spacer(),
             const Divider(),
             _buildCupertinoMenuItem(

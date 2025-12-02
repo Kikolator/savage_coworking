@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/auth_user.dart';
 
-enum _UserMenuAction { admin, logout }
+enum _UserMenuAction { admin, userDashboard, logout }
 
 class UserMenuButton extends StatelessWidget {
   const UserMenuButton({
@@ -10,11 +10,13 @@ class UserMenuButton extends StatelessWidget {
     required this.user,
     required this.onLogout,
     this.onAdminNavigate,
+    this.onUserDashboardNavigate,
   });
 
   final AuthUser user;
   final Future<void> Function() onLogout;
   final VoidCallback? onAdminNavigate;
+  final VoidCallback? onUserDashboardNavigate;
 
   String get _initials {
     final displayName = user.displayName?.trim();
@@ -53,7 +55,7 @@ class UserMenuButton extends StatelessWidget {
           const PopupMenuDivider(),
         ];
 
-        if (user.isAdmin) {
+        if (user.isAdmin && onAdminNavigate != null) {
           items.add(
             const PopupMenuItem<_UserMenuAction>(
               value: _UserMenuAction.admin,
@@ -61,6 +63,20 @@ class UserMenuButton extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.space_dashboard_outlined),
                 title: Text('Admin dashboard'),
+                dense: true,
+              ),
+            ),
+          );
+        }
+
+        if (onUserDashboardNavigate != null) {
+          items.add(
+            const PopupMenuItem<_UserMenuAction>(
+              value: _UserMenuAction.userDashboard,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.home),
+                title: Text('User dashboard'),
                 dense: true,
               ),
             ),
@@ -101,6 +117,9 @@ class UserMenuButton extends StatelessWidget {
     switch (action) {
       case _UserMenuAction.admin:
         onAdminNavigate?.call();
+        break;
+      case _UserMenuAction.userDashboard:
+        onUserDashboardNavigate?.call();
         break;
       case _UserMenuAction.logout:
         onLogout();

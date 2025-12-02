@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/splash_destination.dart';
+import '../../../app/router/app_route.dart';
 import '../service/splash_service.dart';
 
 class SplashState {
@@ -12,12 +12,12 @@ class SplashState {
   });
 
   final bool isLoading;
-  final SplashDestination? destination;
+  final AppRoute? destination;
   final String? errorMessage;
 
   SplashState copyWith({
     bool? isLoading,
-    SplashDestination? destination,
+    AppRoute? destination,
     bool clearDestination = false,
     String? errorMessage,
     bool clearError = false,
@@ -48,10 +48,7 @@ class SplashViewModel extends StateNotifier<SplashState> {
 
     try {
       final destination = await _service.resolveDestination();
-      state = state.copyWith(
-        isLoading: false,
-        destination: destination,
-      );
+      state = state.copyWith(isLoading: false, destination: destination);
     } catch (error, stackTrace) {
       debugPrint('SplashViewModel.loadApp failure: $error\n$stackTrace');
       state = state.copyWith(

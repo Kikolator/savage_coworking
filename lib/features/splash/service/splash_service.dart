@@ -1,18 +1,12 @@
-import 'package:savage_coworking/features/auth/service/auth_service.dart';
-
-import '../models/splash_destination.dart';
+import 'package:savage_coworking/app/navigation/navigation_service.dart';
+import 'package:savage_coworking/app/router/app_route.dart';
 
 class SplashService {
-  SplashService(this._authService);
+  SplashService(this._navigationService);
 
-  final AuthService _authService;
+  final NavigationService _navigationService;
 
-  Future<SplashDestination> resolveDestination() async {
-    try {
-      final user = await _authService.getCurrentUser();
-      return user == null ? SplashDestination.auth : SplashDestination.home;
-    } catch (_) {
-      return SplashDestination.auth;
-    }
+  Future<AppRoute> resolveDestination() async {
+    return _navigationService.getInitialRoute();
   }
 }
