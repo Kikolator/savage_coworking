@@ -25,3 +25,6 @@ All notable changes to this project will be documented in this file.
 - Removed redundant SplashDestination enum, now using AppRoute directly throughout the splash flow.
 - Admin users are now routed to admin dashboard on app startup.
 
+### Fixed
+- Fixed TypeScript build output path in Firebase Functions, ensuring compiled files are correctly placed in `lib/` directory for emulator and deployment.
+
