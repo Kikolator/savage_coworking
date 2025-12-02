@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 - Bidirectional navigation between admin and user dashboards:
   - Admin dashboard menu includes "User Dashboard" option to switch back to user view.
   - User dashboard menu includes "Admin Dashboard" option for admin users.
+- Hot desk management: admins can create, edit, and delete desks through the admin dashboard. Desk management includes validation, active/inactive status toggling, and protection against deletion when desks have active bookings.
+- Desk selection in booking flow: users can view and select available desks from a dropdown when creating bookings. Desks can be filtered by workspace ID, and only active desks are shown for selection.
 
 ### Changed
 - Bottom navigation bar now follows Material 3 and Cupertino design guidelines with proper spacing, icon sizing, and accessibility support.

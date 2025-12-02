@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../models/admin_dashboard_data.dart';
 import '../../models/admin_dashboard_section.dart';
-import '../../viewmodel/admin_dashboard_view_model.dart';
 import '../admin_dashboard_view.dart';
 import 'sections/admin_analytics_section.dart';
+import 'sections/admin_desk_management_section.dart';
 import 'sections/admin_finance_section.dart';
-import 'sections/admin_hot_desks_section.dart';
 import 'sections/admin_meeting_rooms_section.dart';
 import 'sections/admin_members_section.dart';
 import 'sections/admin_overview_section.dart';
@@ -30,8 +28,9 @@ class AdminDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = props.state;
-    final selectedIndex =
-        AdminDashboardSection.values.indexOf(state.selectedSection);
+    final selectedIndex = AdminDashboardSection.values.indexOf(
+      state.selectedSection,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -51,9 +50,8 @@ class AdminDashboardScreen extends StatelessWidget {
       bottomNavigationBar: showBottomNav
           ? NavigationBar(
               selectedIndex: selectedIndex,
-              onDestinationSelected: (index) => props.onSectionSelected(
-                AdminDashboardSection.values[index],
-              ),
+              onDestinationSelected: (index) =>
+                  props.onSectionSelected(AdminDashboardSection.values[index]),
               destinations: AdminDashboardSection.values
                   .map(
                     (section) => NavigationDestination(
@@ -81,8 +79,8 @@ class AdminDashboardScreen extends StatelessWidget {
                           selectedIndex: selectedIndex,
                           onDestinationSelected: (index) =>
                               props.onSectionSelected(
-                            AdminDashboardSection.values[index],
-                          ),
+                                AdminDashboardSection.values[index],
+                              ),
                           labelType: NavigationRailLabelType.all,
                           destinations: AdminDashboardSection.values
                               .map(
@@ -130,10 +128,7 @@ class AdminDashboardScreen extends StatelessWidget {
     final error = state.errorMessage;
 
     if (error != null) {
-      return _ErrorState(
-        message: error,
-        onRetry: props.onRefresh,
-      );
+      return _ErrorState(message: error, onRetry: props.onRefresh);
     }
 
     if (data == null) {
@@ -149,9 +144,7 @@ class AdminDashboardScreen extends StatelessWidget {
           onNavigateToSection: props.onSectionSelected,
         );
       case AdminDashboardSection.hotDesks:
-        return AdminHotDesksSection(
-          details: data.detailsFor(AdminDashboardSection.hotDesks),
-        );
+        return const AdminDeskManagementSection();
       case AdminDashboardSection.meetingRooms:
         return AdminMeetingRoomsSection(
           details: data.detailsFor(AdminDashboardSection.meetingRooms),
@@ -243,10 +236,7 @@ class _ErrorState extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 16),
-          FilledButton(
-            onPressed: onRetry,
-            child: const Text('Try again'),
-          ),
+          FilledButton(onPressed: onRetry, child: const Text('Try again')),
         ],
       ),
     );

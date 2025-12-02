@@ -81,4 +81,22 @@ class HotDeskBookingRepository {
     data['updatedAt'] = Timestamp.fromDate(DateTime.now().toUtc());
     return _collection.doc(bookingId).update(data);
   }
+
+  Future<bool> hasActiveBookingsForDesk(String deskId) async {
+    final now = Timestamp.fromDate(DateTime.now().toUtc());
+    final snapshot = await _collection
+        .where('deskId', isEqualTo: deskId)
+        .where(
+          'status',
+          whereIn: HotDeskBookingStatus.values
+              .where((status) => status.isActive)
+              .map((status) => status.name)
+              .toList(),
+        )
+        .where('endAt', isGreaterThan: now)
+        .limit(1)
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
 }

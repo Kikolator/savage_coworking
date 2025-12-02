@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../models/admin_dashboard_data.dart';
 import '../../../models/admin_dashboard_section.dart';
-import 'admin_section_detail_list.dart';
 
 class AdminOverviewSection extends StatelessWidget {
   const AdminOverviewSection({
