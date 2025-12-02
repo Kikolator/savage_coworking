@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:savage_coworking/features/admin/view/admin_dashboard_view.dart';
 import 'package:savage_coworking/features/auth/providers/auth_providers.dart';
 import 'package:savage_coworking/features/auth/view/auth_view.dart';
 import 'package:savage_coworking/features/bookings/view/bookings_view.dart';
@@ -58,6 +59,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      GoRoute(
+        path: AppRoute.admin.path,
+        name: AppRoute.admin.name,
+        builder: (context, state) => const AdminDashboardView(),
+      ),
     ],
     redirect: (context, state) {
       final authState = ref.read(authStateChangesProvider);
@@ -69,6 +75,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isNavigatingToSplash = location == AppRoute.splash.path;
       final isNavigatingToAuth = location == AppRoute.auth.path;
+      final isNavigatingToAdmin = location == AppRoute.admin.path;
       final isNavigatingToDashboard = location == AppRoute.home.path ||
           location == AppRoute.hotDesk.path ||
           location == AppRoute.bookings.path ||
@@ -79,14 +86,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // Redirect unauthenticated users trying to access dashboard routes
-      if (user == null && isNavigatingToDashboard) {
+      if (user == null && (isNavigatingToDashboard || isNavigatingToAdmin)) {
         return AppRoute.auth.path;
       }
 
       // Redirect authenticated users from auth page to home
       if (user != null && isNavigatingToAuth) {
         return AppRoute.home.path;
+      }
+
+      if (user != null && isNavigatingToAdmin && !user.isAdmin) {
+        return AppRoute.hotDesk.path;
       }
 
       return null;

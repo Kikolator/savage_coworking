@@ -1,6 +1,7 @@
 enum AppRoute {
   splash(path: '/', name: 'splash'),
   auth(path: '/auth', name: 'auth'),
+  admin(path: '/admin', name: 'admin');
   dashboard(path: '/dashboard', name: 'dashboard'),
   home(path: '/home', name: 'home'),
   hotDesk(path: '/desk', name: 'hotDesk'),
