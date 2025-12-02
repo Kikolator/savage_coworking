@@ -49,9 +49,22 @@ class HotDeskBookingViewModel extends StateNotifier<HotDeskBookingState> {
             );
           },
           onError: (error, stackTrace) {
+            String errorMessage;
+            try {
+              if (error is String) {
+                errorMessage = error;
+              } else {
+                final errorStr = error.toString();
+                errorMessage = errorStr.isNotEmpty && errorStr != 'Instance of \'LegacyJavaScriptObject\''
+                    ? errorStr
+                    : 'An unexpected error occurred while loading bookings';
+              }
+            } catch (_) {
+              errorMessage = 'An unexpected error occurred while loading bookings';
+            }
             state = state.copyWith(
               isLoading: false,
-              failure: HotDeskBookingFailure.unexpected(error.toString()),
+              failure: HotDeskBookingFailure.unexpected(errorMessage),
             );
           },
         );

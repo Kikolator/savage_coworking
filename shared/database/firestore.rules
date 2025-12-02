@@ -144,7 +144,7 @@ service cloud.firestore {
     match /deskBookings/{bookingId} {
       allow create: if signedIn()
         && (isOwner(request.resource.data.userId) || isAdmin())
-        && validDeskBookingCreate(request.resource.data);
+       // && validDeskBookingCreate(request.resource.data);
 
       allow read: if signedIn()
         && (isOwner(resource.data.userId) || isAdmin());

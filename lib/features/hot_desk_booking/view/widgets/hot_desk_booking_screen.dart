@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../models/hot_desk_booking.dart';
 import '../../models/hot_desk_booking_request.dart';
 import '../../models/hot_desk_booking_status.dart';
+import '../../models/hot_desk_booking_source.dart';
 import '../../providers/desk_providers.dart';
 import '../hot_desk_booking_view.dart';
+import 'bookings_list_widget.dart';
+import 'date_time_selector_widget.dart';
+import 'desk_selector_widget.dart';
+import 'quick_stats_bar.dart';
+import 'booking_confirmation_dialog.dart';
 
 class HotDeskBookingScreen extends StatelessWidget {
   const HotDeskBookingScreen({
@@ -29,6 +34,9 @@ class HotDeskBookingScreen extends StatelessWidget {
         children: [
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
             child: props.state.isSubmitting
                 ? const LinearProgressIndicator()
                 : const SizedBox.shrink(),
@@ -39,8 +47,11 @@ class HotDeskBookingScreen extends StatelessWidget {
                 constraints: BoxConstraints(
                   maxWidth: maxWidth ?? double.infinity,
                 ),
-                child: Padding(
-                  padding: padding,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
                   child: props.state.isLoading
                       ? const _LoadingState()
                       : _Content(props: props, twoColumn: twoColumn),
@@ -62,25 +73,30 @@ class _Content extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = !twoColumn;
+
     final children = [
-      Flexible(flex: 2, child: _BookingFormCard(props: props)),
-      const SizedBox(height: 24, width: 24),
-      Flexible(
-        flex: 3,
-        child: _BookingsListCard(bookings: props.state.bookings, props: props),
-      ),
+      _BookingFormCard(props: props, isMobile: isMobile),
+      SizedBox(height: isMobile ? 16 : 24, width: isMobile ? 0 : 24),
+      _BookingsListCard(bookings: props.state.bookings, props: props),
     ];
 
     if (twoColumn) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+        children: [
+          Flexible(flex: 2, child: children[0]),
+          SizedBox(width: 24),
+          Flexible(flex: 3, child: children[2]),
+        ],
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: children,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
     );
   }
 }
@@ -90,26 +106,36 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: CircularProgressIndicator());
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Loading...'),
+        ],
+      ),
+    );
   }
 }
 
 class _BookingFormCard extends ConsumerStatefulWidget {
-  const _BookingFormCard({required this.props});
+  const _BookingFormCard({required this.props, this.isMobile = false});
 
   final HotDeskBookingViewProps props;
+  final bool isMobile;
 
   @override
   ConsumerState<_BookingFormCard> createState() => _BookingFormCardState();
 }
 
 class _BookingFormCardState extends ConsumerState<_BookingFormCard> {
-  final _workspaceController = TextEditingController();
   final _purposeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   DateTime? _startAt;
   DateTime? _endAt;
   String? _selectedDeskId;
+  String? _workspaceFilter;
 
   @override
   void initState() {
@@ -127,268 +153,207 @@ class _BookingFormCardState extends ConsumerState<_BookingFormCard> {
 
   @override
   void dispose() {
-    _workspaceController.dispose();
     _purposeController.dispose();
     super.dispose();
   }
 
+  void _handleDurationPreset(Duration duration) {
+    if (_startAt != null) {
+      setState(() {
+        _endAt = _startAt!.add(duration);
+      });
+    }
+  }
+
+  Future<void> _handleBooking() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_startAt == null || _endAt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select start and end time')),
+      );
+      return;
+    }
+
+    if (_selectedDeskId == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a desk')));
+      return;
+    }
+
+    // Get selected desk
+    final desksAsync = ref.read(availableDesksProvider(_workspaceFilter));
+    final desks = desksAsync.value;
+    if (desks == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait for desks to load')),
+      );
+      return;
+    }
+    final selectedDesk = desks.firstWhere(
+      (d) => d.id == _selectedDeskId,
+      orElse: () => throw StateError('Desk not found'),
+    );
+
+    final request = HotDeskBookingRequest(
+      workspaceId: selectedDesk.workspaceId,
+      deskId: selectedDesk.id,
+      startAt: _startAt!,
+      endAt: _endAt!,
+      purpose: _purposeController.text.trim().isEmpty
+          ? null
+          : _purposeController.text.trim(),
+    );
+
+    final failure = await widget.props.onCreateBooking(request);
+
+    if (failure == null && context.mounted) {
+      // Show confirmation dialog
+      final booking = HotDeskBooking(
+        id: '', // Will be set by repository
+        userId: '', // Not needed for display
+        workspaceId: selectedDesk.workspaceId,
+        deskId: selectedDesk.id,
+        startAt: _startAt!,
+        endAt: _endAt!,
+        status: HotDeskBookingStatus.pending,
+        source: HotDeskBookingSource.app,
+        purpose: request.purpose,
+        createdAt: DateTime.now().toUtc(),
+        updatedAt: DateTime.now().toUtc(),
+      );
+
+      // Reset form
+      setState(() {
+        _selectedDeskId = null;
+        _purposeController.clear();
+        final now = DateTime.now().toUtc();
+        final roundedStart = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          now.hour,
+        ).add(const Duration(hours: 1));
+        _startAt = roundedStart;
+        _endAt = roundedStart.add(const Duration(hours: 2));
+      });
+
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => BookingConfirmationDialog(
+            booking: booking,
+            onAddToCalendar: () {
+              // TODO: Implement calendar integration
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Calendar integration coming soon'),
+                ),
+              );
+            },
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final workspaceId = _workspaceController.text.trim().isEmpty
-        ? null
-        : _workspaceController.text.trim();
-    final desksAsync = ref.watch(availableDesksProvider(workspaceId));
+    final desksAsync = ref.watch(availableDesksProvider(_workspaceFilter));
+    final availableCount = desksAsync.value?.length ?? 0;
 
     return Card(
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Book a desk',
-                  style: Theme.of(context).textTheme.titleLarge,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Book a desk',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              // Quick stats bar
+              if (_startAt != null)
+                QuickStatsBar(
+                  availableDesksCount: availableCount,
+                  selectedDate: _startAt,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _workspaceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Workspace ID (optional)',
-                    hintText: 'ex: workspace-01',
-                    helperText: 'Leave empty to see all desks',
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedDeskId =
-                          null; // Reset desk selection when workspace changes
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                desksAsync.when(
-                  data: (desks) {
-                    if (desks.isEmpty) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('No available desks'),
-                          if (workspaceId != null)
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _workspaceController.clear();
-                                  _selectedDeskId = null;
-                                });
-                              },
-                              child: const Text('Clear workspace filter'),
-                            ),
-                        ],
-                      );
-                    }
-                    return DropdownButtonFormField<String>(
-                      value: _selectedDeskId,
-                      decoration: const InputDecoration(
-                        labelText: 'Select Desk',
-                        hintText: 'Choose a desk',
-                      ),
-                      items: desks.map((desk) {
-                        return DropdownMenuItem<String>(
-                          value: desk.id,
-                          child: Text(desk.name),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
+              if (_startAt != null) const SizedBox(height: 16),
+              // Date/time selector with presets
+              DateTimeSelectorWidget(
+                startAt: _startAt,
+                endAt: _endAt,
+                onStartChanged: (value) => setState(() => _startAt = value),
+                onEndChanged: (value) => setState(() => _endAt = value),
+                onDurationPreset: _handleDurationPreset,
+              ),
+              const SizedBox(height: 24),
+              // Visual desk selector
+              Text(
+                'Select a desk',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 12),
+              DeskSelectorWidget(
+                selectedDeskId: _selectedDeskId,
+                onDeskSelected: (deskId) {
+                  setState(() {
+                    _selectedDeskId = deskId;
+                    if (deskId != null) {
+                      // Update workspace filter based on selected desk
+                      desksAsync.whenData((desks) {
+                        final desk = desks.firstWhere((d) => d.id == deskId);
                         setState(() {
-                          _selectedDeskId = value;
-                          if (value != null) {
-                            final selectedDesk = desks.firstWhere(
-                              (d) => d.id == value,
-                            );
-                            _workspaceController.text =
-                                selectedDesk.workspaceId;
-                          }
+                          _workspaceFilter = desk.workspaceId;
                         });
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a desk';
-                        }
-                        return null;
-                      },
-                    );
-                  },
-                  loading: () => const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(16.0),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-                  error: (error, stack) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Error loading desks: $error',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            ref.refresh(availableDesksProvider(workspaceId)),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
+                      });
+                    }
+                  });
+                },
+                workspaceId: _workspaceFilter,
+                startAt: _startAt,
+                endAt: _endAt,
+              ),
+              const SizedBox(height: 16),
+              // Purpose field
+              TextFormField(
+                controller: _purposeController,
+                decoration: const InputDecoration(
+                  labelText: 'Purpose (optional)',
+                  hintText: 'e.g., Team meeting, Focus work',
                 ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _purposeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Purpose (optional)',
-                  ),
-                  maxLength: 140,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DateTimeSelector(
-                        label: 'Start',
-                        value: _startAt,
-                        onChanged: (value) => setState(() => _startAt = value),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _DateTimeSelector(
-                        label: 'End',
-                        value: _endAt,
-                        onChanged: (value) => setState(() => _endAt = value),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
+                maxLength: 140,
+              ),
+              const SizedBox(height: 24),
+              // Reserve button
+              Semantics(
+                label: 'Reserve selected desk',
+                button: true,
+                child: SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: widget.props.state.isSubmitting
                         ? null
-                        : () async {
-                            if (!_formKey.currentState!.validate()) return;
-                            if (_startAt == null || _endAt == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please select start and end time',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            if (_selectedDeskId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please select a desk'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final selectedDesk = desksAsync.value?.firstWhere(
-                              (d) => d.id == _selectedDeskId,
-                            );
-                            if (selectedDesk == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Selected desk not found'),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final request = HotDeskBookingRequest(
-                              workspaceId: selectedDesk.workspaceId,
-                              deskId: selectedDesk.id,
-                              startAt: _startAt!,
-                              endAt: _endAt!,
-                              purpose: _purposeController.text.trim().isEmpty
-                                  ? null
-                                  : _purposeController.text.trim(),
-                            );
-
-                            await widget.props.onCreateBooking(request);
-                          },
+                        : _handleBooking,
                     icon: const Icon(Icons.event_available),
                     label: const Text('Reserve desk'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      minimumSize: const Size(
+                        double.infinity,
+                        48,
+                      ), // ≥48dp height
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DateTimeSelector extends StatelessWidget {
-  const _DateTimeSelector({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  final String label;
-  final DateTime? value;
-  final ValueChanged<DateTime?> onChanged;
-
-  Future<void> _pickDateTime(BuildContext context) async {
-    final now = DateTime.now();
-    final date = await showDatePicker(
-      context: context,
-      initialDate: value ?? now.add(const Duration(days: 1)),
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-    );
-    if (date == null || !context.mounted) return;
-
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(value ?? now),
-    );
-    if (time == null || !context.mounted) return;
-
-    final selected = DateTime(
-      date.year,
-      date.month,
-      date.day,
-      time.hour,
-      time.minute,
-    );
-    onChanged(selected.toUtc());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final formatter = DateFormat('MMM d, h:mm a');
-    final text = value == null ? 'Select' : formatter.format(value!.toLocal());
-    return OutlinedButton(
-      onPressed: () => _pickDateTime(context),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.labelSmall),
-            const SizedBox(height: 4),
-            Text(text),
-          ],
         ),
       ),
     );
@@ -406,126 +371,7 @@ class _BookingsListCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Upcoming bookings',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            if (bookings.isEmpty)
-              const Text('No bookings yet. Reserve your first desk above.')
-            else
-              ...bookings.map(
-                (booking) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _BookingTile(booking: booking, props: props),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BookingTile extends StatelessWidget {
-  const _BookingTile({required this.booking, required this.props});
-
-  final HotDeskBooking booking;
-  final HotDeskBookingViewProps props;
-
-  Color _statusColor(BuildContext context) {
-    switch (booking.status) {
-      case HotDeskBookingStatus.pending:
-        return Colors.orange;
-      case HotDeskBookingStatus.confirmed:
-        return Colors.blue;
-      case HotDeskBookingStatus.checkedIn:
-        return Colors.green;
-      case HotDeskBookingStatus.completed:
-        return Colors.grey;
-      case HotDeskBookingStatus.cancelled:
-        return Colors.red;
-      case HotDeskBookingStatus.noShow:
-        return Colors.purple;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final formatter = DateFormat('EEE, MMM d • h:mm a');
-    final timeRange =
-        '${formatter.format(booking.startAt.toLocal())} → ${formatter.format(booking.endAt.toLocal())}';
-
-    final statusColor = _statusColor(context);
-    final chipColor = statusColor.withValues(alpha: 0.2);
-    final cardColor = Theme.of(
-      context,
-    ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4);
-
-    return Material(
-      color: cardColor,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Desk: ${booking.deskId}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                Chip(
-                  backgroundColor: chipColor,
-                  label: Text(
-                    booking.status.label,
-                    style: TextStyle(color: statusColor),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text('Workspace: ${booking.workspaceId}'),
-            const SizedBox(height: 4),
-            Text(timeRange),
-            if (booking.purpose != null) ...[
-              const SizedBox(height: 4),
-              Text('Purpose: ${booking.purpose}'),
-            ],
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                if (booking.status.isActive)
-                  TextButton.icon(
-                    onPressed: () =>
-                        props.onCancelBooking(booking.id, reason: null),
-                    icon: const Icon(Icons.cancel),
-                    label: const Text('Cancel'),
-                  ),
-                if (booking.status == HotDeskBookingStatus.pending ||
-                    booking.status == HotDeskBookingStatus.confirmed)
-                  TextButton.icon(
-                    onPressed: () => props.onCheckIn(booking.id),
-                    icon: const Icon(Icons.how_to_reg),
-                    label: const Text('Check in'),
-                  ),
-                if (booking.status == HotDeskBookingStatus.checkedIn)
-                  TextButton.icon(
-                    onPressed: () => props.onComplete(booking.id),
-                    icon: const Icon(Icons.check_circle),
-                    label: const Text('Complete'),
-                  ),
-              ],
-            ),
-          ],
-        ),
+        child: BookingsListWidget(bookings: bookings, props: props),
       ),
     );
   }

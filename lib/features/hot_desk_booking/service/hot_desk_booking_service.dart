@@ -54,7 +54,29 @@ class HotDeskBookingService {
       final saved = await _repository.createBooking(booking);
       return (saved, null);
     } catch (e) {
-      return (null, HotDeskBookingFailure.unexpected(e.toString()));
+      // Handle Firestore errors properly, especially on web where they may be JS objects
+      String errorMessage;
+      try {
+        if (e is String) {
+          errorMessage = e;
+        } else {
+          final errorStr = e.toString();
+          // Check for common Firestore error patterns
+          if (errorStr.contains('permission') || errorStr.contains('Permission')) {
+            errorMessage = 'Permission denied. Please check your access rights.';
+          } else if (errorStr.contains('network') || errorStr.contains('Network')) {
+            errorMessage = 'Network error. Please check your connection.';
+          } else if (errorStr.isNotEmpty &&
+              errorStr != 'Instance of \'LegacyJavaScriptObject\'') {
+            errorMessage = errorStr;
+          } else {
+            errorMessage = 'Failed to create booking. Please try again.';
+          }
+        }
+      } catch (_) {
+        errorMessage = 'Failed to create booking. Please try again.';
+      }
+      return (null, HotDeskBookingFailure.unexpected(errorMessage));
     }
   }
 

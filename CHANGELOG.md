@@ -18,6 +18,16 @@ All notable changes to this project will be documented in this file.
   - User dashboard menu includes "Admin Dashboard" option for admin users.
 - Hot desk management: admins can create, edit, and delete desks through the admin dashboard. Desk management includes validation, active/inactive status toggling, and protection against deletion when desks have active bookings.
 - Desk selection in booking flow: users can view and select available desks from a dropdown when creating bookings. Desks can be filtered by workspace ID, and only active desks are shown for selection.
+- Enhanced hot desk booking UI/UX:
+  - Visual desk selector with card-based grid layout showing availability status
+  - Quick date/time presets (Today, Tomorrow, This Week) and duration presets (2h, Half day, Full day)
+  - Combined date-time picker widget
+  - Grouped bookings list by date (Today, Tomorrow, This Week, Later) with collapsible sections
+  - Enhanced empty states with helpful messages and CTAs
+  - Skeleton loading states with shimmer animation
+  - Quick stats bar showing available desks count
+  - Booking confirmation dialog with booking summary
+  - Search and filter functionality for desk selection
 
 ### Changed
 - Bottom navigation bar now follows Material 3 and Cupertino design guidelines with proper spacing, icon sizing, and accessibility support.
@@ -29,4 +39,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - Fixed TypeScript build output path in Firebase Functions, ensuring compiled files are correctly placed in `lib/` directory for emulator and deployment.
+- Fixed error handling for Firestore JavaScript objects on web platform, preventing type mismatch errors when booking desks.
+- Fixed RangeError when displaying booking confirmation dialog with empty booking ID.
+- Fixed scroll behavior in hot desk booking screen by removing nested scroll views and making entire page scrollable.
 
