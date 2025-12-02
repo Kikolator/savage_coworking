@@ -1,16 +1,38 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/router/app_route.dart';
 
+/// Bottom navigation bar widget that adapts to platform (Material/Cupertino).
+///
+/// Platform detection logic:
+/// - Web: Always uses Material 3 (regardless of underlying OS)
+/// - Native iOS/macOS: Uses Cupertino style
+/// - Native Android/other: Uses Material 3
+///
+/// Follows Material 3 and Cupertino design guidelines:
+/// - Fixed type navigation (M3 best practice)
+/// - Proper icon sizing (24dp)
+/// - Minimum touch targets (48x48dp)
+/// - Proper spacing and padding
+/// - Accessibility support
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final currentLocation = GoRouterState.of(context).matchedLocation;
-    final isApplePlatform = Theme.of(context).platform == TargetPlatform.iOS ||
+    
+    // Web always uses Material 3, regardless of underlying OS
+    if (kIsWeb) {
+      return _buildMaterialNavBar(context, currentLocation);
+    }
+    
+    // For native apps, check platform
+    final isApplePlatform =
+        Theme.of(context).platform == TargetPlatform.iOS ||
         Theme.of(context).platform == TargetPlatform.macOS;
 
     if (isApplePlatform) {
@@ -20,54 +42,90 @@ class BottomNavBar extends StatelessWidget {
     }
   }
 
+  /// Builds Material 3 bottom navigation bar.
+  ///
+  /// Uses fixed type (M3 best practice) and follows theme configuration.
   Widget _buildMaterialNavBar(BuildContext context, String currentLocation) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: _getCurrentIndex(currentLocation),
-      onTap: (index) => _onItemTapped(context, index),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.desktop_windows),
-          label: 'Hot Desk',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: 'Bookings',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
-        ),
-      ],
+    final currentIndex = _getCurrentIndex(currentLocation);
+
+    return SafeArea(
+      child: BottomNavigationBar(
+        // Use fixed type for M3 (not shifting)
+        type: BottomNavigationBarType.fixed,
+        currentIndex: currentIndex,
+        onTap: (index) => _onItemTapped(context, index),
+        // Theme colors are applied automatically via bottomNavigationBarTheme
+        // Explicitly set icon size to 24dp (M3 standard)
+        iconSize: 24,
+        // Ensure proper spacing between items
+        selectedFontSize: 12,
+        unselectedFontSize: 12,
+        // Minimum touch target is handled by BottomNavigationBar (48dp height)
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+            tooltip: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.desktop_windows_outlined),
+            activeIcon: Icon(Icons.desktop_windows),
+            label: 'Hot Desk',
+            tooltip: 'Hot Desk Booking',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today_outlined),
+            activeIcon: Icon(Icons.calendar_today),
+            label: 'Bookings',
+            tooltip: 'Bookings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings_outlined),
+            activeIcon: Icon(Icons.settings),
+            label: 'Settings',
+            tooltip: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 
+  /// Builds Cupertino-style bottom navigation bar for iOS/macOS.
+  ///
+  /// Follows iOS Human Interface Guidelines with proper spacing and styling.
   Widget _buildCupertinoNavBar(BuildContext context, String currentLocation) {
-    return CupertinoTabBar(
-      currentIndex: _getCurrentIndex(currentLocation),
-      onTap: (index) => _onItemTapped(context, index),
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.house),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.desktopcomputer),
-          label: 'Hot Desk',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.calendar),
-          label: 'Bookings',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.settings),
-          label: 'Settings',
-        ),
-      ],
+    final currentIndex = _getCurrentIndex(currentLocation);
+
+    return SafeArea(
+      child: CupertinoTabBar(
+        currentIndex: currentIndex,
+        onTap: (index) => _onItemTapped(context, index),
+        // CupertinoTabBar handles proper spacing automatically
+        // Icon size defaults to appropriate size for iOS
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.house),
+            activeIcon: Icon(CupertinoIcons.house_fill),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.desktopcomputer),
+            activeIcon: Icon(CupertinoIcons.desktopcomputer),
+            label: 'Hot Desk',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.calendar),
+            activeIcon: Icon(CupertinoIcons.calendar),
+            label: 'Bookings',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.settings),
+            activeIcon: Icon(CupertinoIcons.settings_solid),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 
@@ -96,4 +154,3 @@ class BottomNavBar extends StatelessWidget {
     }
   }
 }
-
