@@ -28,6 +28,20 @@ All notable changes to this project will be documented in this file.
   - Quick stats bar showing available desks count
   - Booking confirmation dialog with booking summary
   - Search and filter functionality for desk selection
+- Workspace management infrastructure:
+  - Workspace schema, model, repository, service, and providers
+  - Workspace dropdown in desk creation dialog
+  - Firestore rules for workspaces collection
+- Desk image upload functionality:
+  - Optional image upload when creating desks
+  - Firebase Storage integration for desk images
+  - Image preview and removal in desk creation dialog
+  - Storage service for handling image uploads
+- Enhanced desk creation dialog:
+  - Workspace dropdown populated from Firestore
+  - Active/inactive switch for desk status
+  - Optional image picker with preview
+  - Improved form validation and error handling
 
 ### Changed
 - Bottom navigation bar now follows Material 3 and Cupertino design guidelines with proper spacing, icon sizing, and accessibility support.

@@ -3,7 +3,7 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'desk.dart';
+part of 'workspace.dart';
 
 // **************************************************************************
 // FreezedGenerator
@@ -15,67 +15,62 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
-Desk _$DeskFromJson(Map<String, dynamic> json) {
-  return _Desk.fromJson(json);
+Workspace _$WorkspaceFromJson(Map<String, dynamic> json) {
+  return _Workspace.fromJson(json);
 }
 
 /// @nodoc
-mixin _$Desk {
+mixin _$Workspace {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get workspaceId => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
-  String? get imageUrl => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
-  /// Serializes this Desk to a JSON map.
+  /// Serializes this Workspace to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
-  /// Create a copy of Desk
+  /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
-  $DeskCopyWith<Desk> get copyWith => throw _privateConstructorUsedError;
+  $WorkspaceCopyWith<Workspace> get copyWith =>
+      throw _privateConstructorUsedError;
 }
 
 /// @nodoc
-abstract class $DeskCopyWith<$Res> {
-  factory $DeskCopyWith(Desk value, $Res Function(Desk) then) =
-      _$DeskCopyWithImpl<$Res, Desk>;
+abstract class $WorkspaceCopyWith<$Res> {
+  factory $WorkspaceCopyWith(Workspace value, $Res Function(Workspace) then) =
+      _$WorkspaceCopyWithImpl<$Res, Workspace>;
   @useResult
   $Res call({
     String id,
     String name,
-    String workspaceId,
     bool isActive,
-    String? imageUrl,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
 }
 
 /// @nodoc
-class _$DeskCopyWithImpl<$Res, $Val extends Desk>
-    implements $DeskCopyWith<$Res> {
-  _$DeskCopyWithImpl(this._value, this._then);
+class _$WorkspaceCopyWithImpl<$Res, $Val extends Workspace>
+    implements $WorkspaceCopyWith<$Res> {
+  _$WorkspaceCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of Desk
+  /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? workspaceId = null,
     Object? isActive = null,
-    Object? imageUrl = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -89,18 +84,10 @@ class _$DeskCopyWithImpl<$Res, $Val extends Desk>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
-            workspaceId: null == workspaceId
-                ? _value.workspaceId
-                : workspaceId // ignore: cast_nullable_to_non_nullable
-                      as String,
             isActive: null == isActive
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
-            imageUrl: freezed == imageUrl
-                ? _value.imageUrl
-                : imageUrl // ignore: cast_nullable_to_non_nullable
-                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -116,46 +103,45 @@ class _$DeskCopyWithImpl<$Res, $Val extends Desk>
 }
 
 /// @nodoc
-abstract class _$$DeskImplCopyWith<$Res> implements $DeskCopyWith<$Res> {
-  factory _$$DeskImplCopyWith(
-    _$DeskImpl value,
-    $Res Function(_$DeskImpl) then,
-  ) = __$$DeskImplCopyWithImpl<$Res>;
+abstract class _$$WorkspaceImplCopyWith<$Res>
+    implements $WorkspaceCopyWith<$Res> {
+  factory _$$WorkspaceImplCopyWith(
+    _$WorkspaceImpl value,
+    $Res Function(_$WorkspaceImpl) then,
+  ) = __$$WorkspaceImplCopyWithImpl<$Res>;
   @override
   @useResult
   $Res call({
     String id,
     String name,
-    String workspaceId,
     bool isActive,
-    String? imageUrl,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
 }
 
 /// @nodoc
-class __$$DeskImplCopyWithImpl<$Res>
-    extends _$DeskCopyWithImpl<$Res, _$DeskImpl>
-    implements _$$DeskImplCopyWith<$Res> {
-  __$$DeskImplCopyWithImpl(_$DeskImpl _value, $Res Function(_$DeskImpl) _then)
-    : super(_value, _then);
+class __$$WorkspaceImplCopyWithImpl<$Res>
+    extends _$WorkspaceCopyWithImpl<$Res, _$WorkspaceImpl>
+    implements _$$WorkspaceImplCopyWith<$Res> {
+  __$$WorkspaceImplCopyWithImpl(
+    _$WorkspaceImpl _value,
+    $Res Function(_$WorkspaceImpl) _then,
+  ) : super(_value, _then);
 
-  /// Create a copy of Desk
+  /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? workspaceId = null,
     Object? isActive = null,
-    Object? imageUrl = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
     return _then(
-      _$DeskImpl(
+      _$WorkspaceImpl(
         id: null == id
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
@@ -164,18 +150,10 @@ class __$$DeskImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
-        workspaceId: null == workspaceId
-            ? _value.workspaceId
-            : workspaceId // ignore: cast_nullable_to_non_nullable
-                  as String,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
-        imageUrl: freezed == imageUrl
-            ? _value.imageUrl
-            : imageUrl // ignore: cast_nullable_to_non_nullable
-                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -191,30 +169,24 @@ class __$$DeskImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$DeskImpl implements _Desk {
-  const _$DeskImpl({
+class _$WorkspaceImpl implements _Workspace {
+  const _$WorkspaceImpl({
     required this.id,
     required this.name,
-    required this.workspaceId,
     required this.isActive,
-    this.imageUrl,
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
   });
 
-  factory _$DeskImpl.fromJson(Map<String, dynamic> json) =>
-      _$$DeskImplFromJson(json);
+  factory _$WorkspaceImpl.fromJson(Map<String, dynamic> json) =>
+      _$$WorkspaceImplFromJson(json);
 
   @override
   final String id;
   @override
   final String name;
   @override
-  final String workspaceId;
-  @override
   final bool isActive;
-  @override
-  final String? imageUrl;
   @override
   @TimestampConverter()
   final DateTime createdAt;
@@ -224,22 +196,18 @@ class _$DeskImpl implements _Desk {
 
   @override
   String toString() {
-    return 'Desk(id: $id, name: $name, workspaceId: $workspaceId, isActive: $isActive, imageUrl: $imageUrl, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Workspace(id: $id, name: $name, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is _$DeskImpl &&
+            other is _$WorkspaceImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
-            (identical(other.workspaceId, workspaceId) ||
-                other.workspaceId == workspaceId) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
-            (identical(other.imageUrl, imageUrl) ||
-                other.imageUrl == imageUrl) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -248,54 +216,41 @@ class _$DeskImpl implements _Desk {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-    runtimeType,
-    id,
-    name,
-    workspaceId,
-    isActive,
-    imageUrl,
-    createdAt,
-    updatedAt,
-  );
+  int get hashCode =>
+      Object.hash(runtimeType, id, name, isActive, createdAt, updatedAt);
 
-  /// Create a copy of Desk
+  /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$DeskImplCopyWith<_$DeskImpl> get copyWith =>
-      __$$DeskImplCopyWithImpl<_$DeskImpl>(this, _$identity);
+  _$$WorkspaceImplCopyWith<_$WorkspaceImpl> get copyWith =>
+      __$$WorkspaceImplCopyWithImpl<_$WorkspaceImpl>(this, _$identity);
 
   @override
   Map<String, dynamic> toJson() {
-    return _$$DeskImplToJson(this);
+    return _$$WorkspaceImplToJson(this);
   }
 }
 
-abstract class _Desk implements Desk {
-  const factory _Desk({
+abstract class _Workspace implements Workspace {
+  const factory _Workspace({
     required final String id,
     required final String name,
-    required final String workspaceId,
     required final bool isActive,
-    final String? imageUrl,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
-  }) = _$DeskImpl;
+  }) = _$WorkspaceImpl;
 
-  factory _Desk.fromJson(Map<String, dynamic> json) = _$DeskImpl.fromJson;
+  factory _Workspace.fromJson(Map<String, dynamic> json) =
+      _$WorkspaceImpl.fromJson;
 
   @override
   String get id;
   @override
   String get name;
   @override
-  String get workspaceId;
-  @override
   bool get isActive;
-  @override
-  String? get imageUrl;
   @override
   @TimestampConverter()
   DateTime get createdAt;
@@ -303,10 +258,10 @@ abstract class _Desk implements Desk {
   @TimestampConverter()
   DateTime get updatedAt;
 
-  /// Create a copy of Desk
+  /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$DeskImplCopyWith<_$DeskImpl> get copyWith =>
+  _$$WorkspaceImplCopyWith<_$WorkspaceImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

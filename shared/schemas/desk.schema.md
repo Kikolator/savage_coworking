@@ -10,6 +10,7 @@ interface Desk {
   name: string;            // Desk identifier/name (e.g., "Desk 21A", "Desk-101")
   workspaceId: string;     // Reference to workspace/building
   isActive: boolean;       // Whether desk is available for booking
+  imageUrl?: string;       // Optional URL to desk image in Firebase Storage
   createdAt: Timestamp;   // Creation timestamp
   updatedAt: Timestamp;   // Last update timestamp
 }
@@ -26,6 +27,7 @@ interface Desk {
 - `name`: Human-readable desk name/identifier (required, 1-100 characters)
 - `workspaceId`: Workspace/building identifier where the desk is located (required)
 - `isActive`: Boolean flag indicating if the desk is available for booking (default: true)
+- `imageUrl`: Optional URL to desk image stored in Firebase Storage
 - `createdAt`: Timestamp when the desk was created
 - `updatedAt`: Timestamp when the desk document was last updated
 

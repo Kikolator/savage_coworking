@@ -22,6 +22,8 @@ class DeskService {
   Future<(Desk?, String?)> createDesk({
     required String name,
     required String workspaceId,
+    String? imageUrl,
+    bool isActive = true,
   }) async {
     final validationError = _validateDeskData(name: name, workspaceId: workspaceId);
     if (validationError != null) {
@@ -33,7 +35,8 @@ class DeskService {
       id: '',
       name: name.trim(),
       workspaceId: workspaceId.trim(),
-      isActive: true,
+      isActive: isActive,
+      imageUrl: imageUrl,
       createdAt: now,
       updatedAt: now,
     );
@@ -50,6 +53,7 @@ class DeskService {
     String deskId, {
     String? name,
     bool? isActive,
+    String? imageUrl,
   }) async {
     if (name != null) {
       final validationError = _validateDeskData(name: name);
@@ -65,6 +69,9 @@ class DeskService {
       }
       if (isActive != null) {
         updates['isActive'] = isActive;
+      }
+      if (imageUrl != null) {
+        updates['imageUrl'] = imageUrl;
       }
       await _repository.updateDesk(deskId, updates);
       return null;

@@ -114,6 +114,10 @@ service cloud.firestore {
       allow write: if isAdmin();
       allow read: if signedIn();
     }
+    match /workspaces/{document} {
+      allow write: if isAdmin();
+      allow read: if signedIn();
+    }
 
     // checked in out sessions can be written and read by owner
     match /check_in_out_sessions/{document} {

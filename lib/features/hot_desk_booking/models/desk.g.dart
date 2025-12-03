@@ -11,6 +11,7 @@ _$DeskImpl _$$DeskImplFromJson(Map<String, dynamic> json) => _$DeskImpl(
   name: json['name'] as String,
   workspaceId: json['workspaceId'] as String,
   isActive: json['isActive'] as bool,
+  imageUrl: json['imageUrl'] as String?,
   createdAt: const TimestampConverter().fromJson(
     json['createdAt'] as Timestamp,
   ),
@@ -25,6 +26,7 @@ Map<String, dynamic> _$$DeskImplToJson(_$DeskImpl instance) =>
       'name': instance.name,
       'workspaceId': instance.workspaceId,
       'isActive': instance.isActive,
+      'imageUrl': instance.imageUrl,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
       'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
     };

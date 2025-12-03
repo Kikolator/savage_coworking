@@ -3,20 +3,20 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../core/converters/timestamp_converter.dart';
 
-part 'desk.freezed.dart';
-part 'desk.g.dart';
+part 'workspace.freezed.dart';
+part 'workspace.g.dart';
 
 @freezed
-class Desk with _$Desk {
-  const factory Desk({
+class Workspace with _$Workspace {
+  const factory Workspace({
     required String id,
     required String name,
-    required String workspaceId,
     required bool isActive,
-    String? imageUrl,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,
-  }) = _Desk;
+  }) = _Workspace;
 
-  factory Desk.fromJson(Map<String, dynamic> json) => _$DeskFromJson(json);
+  factory Workspace.fromJson(Map<String, dynamic> json) =>
+      _$WorkspaceFromJson(json);
 }
+
