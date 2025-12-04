@@ -5,6 +5,7 @@ import '../../../auth/providers/auth_providers.dart';
 import '../../../hot_desk_booking/providers/workspace_providers.dart';
 import '../../providers/workspace_selection_providers.dart';
 import 'create_workspace_dialog.dart';
+import 'edit_workspace_dialog.dart';
 
 class WorkspaceSwitcherDialog extends ConsumerWidget {
   const WorkspaceSwitcherDialog({super.key});
@@ -118,6 +119,31 @@ class WorkspaceSwitcherDialog extends ConsumerWidget {
                         )
                       : const Icon(Icons.circle_outlined),
                   selected: isSelected,
+                  trailing: user.isAdmin
+                      ? IconButton(
+                          icon: const Icon(Icons.edit_outlined),
+                          tooltip: 'Edit workspace',
+                          onPressed: () async {
+                            // Show edit workspace dialog
+                            final updated = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => EditWorkspaceDialog(
+                                workspace: workspace,
+                                onWorkspaceUpdated: () {
+                                  // Workspace updated, refresh the list
+                                  ref.invalidate(activeWorkspacesFutureProvider);
+                                },
+                              ),
+                            );
+
+                            // If workspace was updated, refresh the list
+                            if (updated == true && context.mounted) {
+                              // Refresh workspace list
+                              ref.invalidate(activeWorkspacesFutureProvider);
+                            }
+                          },
+                        )
+                      : null,
                   onTap: () async {
                     final error = await switchWorkspace(ref, user.id, workspace.id);
                     if (context.mounted) {
