@@ -11,6 +11,9 @@ class Workspace with _$Workspace {
   const factory Workspace({
     required String id,
     required String name,
+    required String location,
+    required String country,
+    String? companyLogoUrl,
     required bool isActive,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,

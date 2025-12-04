@@ -13,6 +13,7 @@ class User with _$User {
     required String email,
     String? displayName,
     String? photoUrl,
+    String? selectedWorkspaceId,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,
   }) = _User;

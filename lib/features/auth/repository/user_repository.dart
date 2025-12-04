@@ -80,6 +80,17 @@ class UserRepository {
 
     await _collection.doc(id).update(updates);
   }
+
+  /// Updates the selected workspace ID for a user.
+  /// Automatically updates the updatedAt timestamp.
+  Future<void> updateSelectedWorkspace(String id, String? workspaceId) async {
+    final updates = <String, dynamic>{
+      'updatedAt': Timestamp.fromDate(DateTime.now().toUtc()),
+      'selectedWorkspaceId': workspaceId,
+    };
+
+    await _collection.doc(id).update(updates);
+  }
 }
 
 

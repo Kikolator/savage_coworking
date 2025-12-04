@@ -25,6 +25,7 @@ mixin _$User {
   String get email => throw _privateConstructorUsedError;
   String? get displayName => throw _privateConstructorUsedError;
   String? get photoUrl => throw _privateConstructorUsedError;
+  String? get selectedWorkspaceId => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -49,6 +50,7 @@ abstract class $UserCopyWith<$Res> {
     String email,
     String? displayName,
     String? photoUrl,
+    String? selectedWorkspaceId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
@@ -73,6 +75,7 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? email = null,
     Object? displayName = freezed,
     Object? photoUrl = freezed,
+    Object? selectedWorkspaceId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -93,6 +96,10 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
             photoUrl: freezed == photoUrl
                 ? _value.photoUrl
                 : photoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            selectedWorkspaceId: freezed == selectedWorkspaceId
+                ? _value.selectedWorkspaceId
+                : selectedWorkspaceId // ignore: cast_nullable_to_non_nullable
                       as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
@@ -121,6 +128,7 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
     String email,
     String? displayName,
     String? photoUrl,
+    String? selectedWorkspaceId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
@@ -142,6 +150,7 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? email = null,
     Object? displayName = freezed,
     Object? photoUrl = freezed,
+    Object? selectedWorkspaceId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -162,6 +171,10 @@ class __$$UserImplCopyWithImpl<$Res>
         photoUrl: freezed == photoUrl
             ? _value.photoUrl
             : photoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        selectedWorkspaceId: freezed == selectedWorkspaceId
+            ? _value.selectedWorkspaceId
+            : selectedWorkspaceId // ignore: cast_nullable_to_non_nullable
                   as String?,
         createdAt: null == createdAt
             ? _value.createdAt
@@ -184,6 +197,7 @@ class _$UserImpl implements _User {
     required this.email,
     this.displayName,
     this.photoUrl,
+    this.selectedWorkspaceId,
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
   });
@@ -200,6 +214,8 @@ class _$UserImpl implements _User {
   @override
   final String? photoUrl;
   @override
+  final String? selectedWorkspaceId;
+  @override
   @TimestampConverter()
   final DateTime createdAt;
   @override
@@ -208,7 +224,7 @@ class _$UserImpl implements _User {
 
   @override
   String toString() {
-    return 'User(id: $id, email: $email, displayName: $displayName, photoUrl: $photoUrl, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'User(id: $id, email: $email, displayName: $displayName, photoUrl: $photoUrl, selectedWorkspaceId: $selectedWorkspaceId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -222,6 +238,8 @@ class _$UserImpl implements _User {
                 other.displayName == displayName) &&
             (identical(other.photoUrl, photoUrl) ||
                 other.photoUrl == photoUrl) &&
+            (identical(other.selectedWorkspaceId, selectedWorkspaceId) ||
+                other.selectedWorkspaceId == selectedWorkspaceId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -236,6 +254,7 @@ class _$UserImpl implements _User {
     email,
     displayName,
     photoUrl,
+    selectedWorkspaceId,
     createdAt,
     updatedAt,
   );
@@ -260,6 +279,7 @@ abstract class _User implements User {
     required final String email,
     final String? displayName,
     final String? photoUrl,
+    final String? selectedWorkspaceId,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
   }) = _$UserImpl;
@@ -274,6 +294,8 @@ abstract class _User implements User {
   String? get displayName;
   @override
   String? get photoUrl;
+  @override
+  String? get selectedWorkspaceId;
   @override
   @TimestampConverter()
   DateTime get createdAt;

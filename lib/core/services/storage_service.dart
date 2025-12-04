@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 class StorageService {
@@ -15,7 +16,9 @@ class StorageService {
     try {
       // Get file extension
       final extension = imageFile.path.split('.').last.toLowerCase();
-      
+
+      print('Extension: $extension');
+
       // Validate file extension
       if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
         throw Exception('Invalid image format. Please use JPG, PNG, or WebP.');
@@ -25,7 +28,12 @@ class StorageService {
       final ref = _storage.ref().child('desks/$deskId/image.$extension');
 
       // Upload file
-      final uploadTask = ref.putFile(File(imageFile.path));
+      UploadTask uploadTask;
+      if (kIsWeb) {
+        uploadTask = ref.putData(await imageFile.readAsBytes());
+      } else {
+        uploadTask = ref.putFile(File(imageFile.path));
+      }
 
       // Wait for upload to complete
       final snapshot = await uploadTask;
@@ -49,5 +57,53 @@ class StorageService {
       // Log error in production
     }
   }
-}
 
+  Future<String?> uploadWorkspaceLogo({
+    required String workspaceId,
+    required XFile imageFile,
+  }) async {
+    try {
+      // Get file extension
+      final extension = imageFile.path.split('.').last.toLowerCase();
+
+      // Validate file extension
+      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+        throw Exception('Invalid image format. Please use JPG, PNG, or WebP.');
+      }
+
+      // Create reference to storage location
+      final ref = _storage.ref().child(
+        'workspaces/$workspaceId/logo.$extension',
+      );
+
+      // Upload file
+      UploadTask uploadTask;
+      if (kIsWeb) {
+        uploadTask = ref.putData(await imageFile.readAsBytes());
+      } else {
+        uploadTask = ref.putFile(File(imageFile.path));
+      }
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload logo: ${e.toString()}');
+    }
+  }
+
+  Future<void> deleteWorkspaceLogo(String imageUrl) async {
+    try {
+      // Extract path from URL
+      final ref = _storage.refFromURL(imageUrl);
+      await ref.delete();
+    } catch (e) {
+      // Ignore errors when deleting (image might not exist)
+      // Log error in production
+    }
+  }
+}

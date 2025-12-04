@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/auth_user.dart';
+import '../../../workspace/view/widgets/workspace_switcher_dialog.dart';
+import '../../../workspace/providers/workspace_selection_providers.dart';
 
-enum _UserMenuAction { admin, userDashboard, logout }
+enum _UserMenuAction { admin, userDashboard, switchWorkspace, logout }
 
-class UserMenuButton extends StatelessWidget {
+class UserMenuButton extends ConsumerWidget {
   const UserMenuButton({
     super.key,
     required this.user,
@@ -28,12 +31,13 @@ class UserMenuButton extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedWorkspaceAsync = ref.watch(selectedWorkspaceProvider);
     return PopupMenuButton<_UserMenuAction>(
       tooltip: 'User menu',
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       offset: const Offset(0, 12),
-      onSelected: (action) => _handleSelected(action),
+      onSelected: (action) => _handleSelected(context, action),
       itemBuilder: (context) {
         final items = <PopupMenuEntry<_UserMenuAction>>[
           PopupMenuItem<_UserMenuAction>(
@@ -63,6 +67,25 @@ class UserMenuButton extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.space_dashboard_outlined),
                 title: Text('Admin dashboard'),
+                dense: true,
+              ),
+            ),
+          );
+        }
+
+        if (user.isAdmin) {
+          final workspaceName = selectedWorkspaceAsync.valueOrNull?.name ?? 'No workspace';
+          items.add(
+            PopupMenuItem<_UserMenuAction>(
+              value: _UserMenuAction.switchWorkspace,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.business),
+                title: const Text('Switch Workspace'),
+                subtitle: Text(
+                  workspaceName,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
                 dense: true,
               ),
             ),
@@ -113,13 +136,19 @@ class UserMenuButton extends StatelessWidget {
     );
   }
 
-  void _handleSelected(_UserMenuAction action) {
+  void _handleSelected(BuildContext context, _UserMenuAction action) {
     switch (action) {
       case _UserMenuAction.admin:
         onAdminNavigate?.call();
         break;
       case _UserMenuAction.userDashboard:
         onUserDashboardNavigate?.call();
+        break;
+      case _UserMenuAction.switchWorkspace:
+        showDialog(
+          context: context,
+          builder: (context) => const WorkspaceSwitcherDialog(),
+        );
         break;
       case _UserMenuAction.logout:
         onLogout();

@@ -16,8 +16,15 @@ class WorkspaceService {
 
   Future<(Workspace?, String?)> createWorkspace({
     required String name,
+    required String location,
+    required String country,
+    String? companyLogoUrl,
   }) async {
-    final validationError = _validateWorkspaceData(name: name);
+    final validationError = _validateWorkspaceData(
+      name: name,
+      location: location,
+      country: country,
+    );
     if (validationError != null) {
       return (null, validationError);
     }
@@ -26,6 +33,9 @@ class WorkspaceService {
     final workspace = Workspace(
       id: '',
       name: name.trim(),
+      location: location.trim(),
+      country: country.trim(),
+      companyLogoUrl: companyLogoUrl,
       isActive: true,
       createdAt: now,
       updatedAt: now,
@@ -42,19 +52,33 @@ class WorkspaceService {
   Future<String?> updateWorkspace(
     String workspaceId, {
     String? name,
+    String? location,
+    String? country,
+    String? companyLogoUrl,
     bool? isActive,
   }) async {
-    if (name != null) {
-      final validationError = _validateWorkspaceData(name: name);
-      if (validationError != null) {
-        return validationError;
-      }
+    final validationError = _validateWorkspaceData(
+      name: name,
+      location: location,
+      country: country,
+    );
+    if (validationError != null) {
+      return validationError;
     }
 
     try {
       final updates = <String, dynamic>{};
       if (name != null) {
         updates['name'] = name.trim();
+      }
+      if (location != null) {
+        updates['location'] = location.trim();
+      }
+      if (country != null) {
+        updates['country'] = country.trim();
+      }
+      if (companyLogoUrl != null) {
+        updates['companyLogoUrl'] = companyLogoUrl;
       }
       if (isActive != null) {
         updates['isActive'] = isActive;
@@ -77,6 +101,8 @@ class WorkspaceService {
 
   String? _validateWorkspaceData({
     String? name,
+    String? location,
+    String? country,
   }) {
     if (name != null) {
       final trimmed = name.trim();
@@ -87,7 +113,24 @@ class WorkspaceService {
         return 'Workspace name must be 100 characters or less';
       }
     }
+    if (location != null) {
+      final trimmed = location.trim();
+      if (trimmed.isEmpty) {
+        return 'Location is required';
+      }
+      if (trimmed.length > 200) {
+        return 'Location must be 200 characters or less';
+      }
+    }
+    if (country != null) {
+      final trimmed = country.trim();
+      if (trimmed.isEmpty) {
+        return 'Country is required';
+      }
+      if (trimmed.length > 100) {
+        return 'Country must be 100 characters or less';
+      }
+    }
     return null;
   }
 }
-

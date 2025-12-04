@@ -10,6 +10,9 @@
 # ai/
 # .cursor/
 
+# Firebase config and emulators
+emulator-data/
+
 # FIREBASE
 # --------
 

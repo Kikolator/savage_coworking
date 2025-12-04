@@ -70,5 +70,16 @@ class AuthService {
   Future<void> resetPassword(String email) {
     return _authRepo.sendPasswordResetEmail(email);
   }
+
+  /// Switches the selected workspace for the current user.
+  /// Updates the user document with the new selectedWorkspaceId.
+  Future<String?> switchWorkspace(String userId, String workspaceId) async {
+    try {
+      await _userRepo.updateSelectedWorkspace(userId, workspaceId);
+      return null;
+    } catch (e) {
+      return 'Failed to switch workspace: ${e.toString()}';
+    }
+  }
 }
 

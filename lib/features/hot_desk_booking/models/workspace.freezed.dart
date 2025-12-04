@@ -23,6 +23,9 @@ Workspace _$WorkspaceFromJson(Map<String, dynamic> json) {
 mixin _$Workspace {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
+  String get location => throw _privateConstructorUsedError;
+  String get country => throw _privateConstructorUsedError;
+  String? get companyLogoUrl => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
@@ -47,6 +50,9 @@ abstract class $WorkspaceCopyWith<$Res> {
   $Res call({
     String id,
     String name,
+    String location,
+    String country,
+    String? companyLogoUrl,
     bool isActive,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
@@ -70,6 +76,9 @@ class _$WorkspaceCopyWithImpl<$Res, $Val extends Workspace>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? location = null,
+    Object? country = null,
+    Object? companyLogoUrl = freezed,
     Object? isActive = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -84,6 +93,18 @@ class _$WorkspaceCopyWithImpl<$Res, $Val extends Workspace>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
+            location: null == location
+                ? _value.location
+                : location // ignore: cast_nullable_to_non_nullable
+                      as String,
+            country: null == country
+                ? _value.country
+                : country // ignore: cast_nullable_to_non_nullable
+                      as String,
+            companyLogoUrl: freezed == companyLogoUrl
+                ? _value.companyLogoUrl
+                : companyLogoUrl // ignore: cast_nullable_to_non_nullable
+                      as String?,
             isActive: null == isActive
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
@@ -114,6 +135,9 @@ abstract class _$$WorkspaceImplCopyWith<$Res>
   $Res call({
     String id,
     String name,
+    String location,
+    String country,
+    String? companyLogoUrl,
     bool isActive,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
@@ -136,6 +160,9 @@ class __$$WorkspaceImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
+    Object? location = null,
+    Object? country = null,
+    Object? companyLogoUrl = freezed,
     Object? isActive = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -150,6 +177,18 @@ class __$$WorkspaceImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
+        location: null == location
+            ? _value.location
+            : location // ignore: cast_nullable_to_non_nullable
+                  as String,
+        country: null == country
+            ? _value.country
+            : country // ignore: cast_nullable_to_non_nullable
+                  as String,
+        companyLogoUrl: freezed == companyLogoUrl
+            ? _value.companyLogoUrl
+            : companyLogoUrl // ignore: cast_nullable_to_non_nullable
+                  as String?,
         isActive: null == isActive
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
@@ -173,6 +212,9 @@ class _$WorkspaceImpl implements _Workspace {
   const _$WorkspaceImpl({
     required this.id,
     required this.name,
+    required this.location,
+    required this.country,
+    this.companyLogoUrl,
     required this.isActive,
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
@@ -186,6 +228,12 @@ class _$WorkspaceImpl implements _Workspace {
   @override
   final String name;
   @override
+  final String location;
+  @override
+  final String country;
+  @override
+  final String? companyLogoUrl;
+  @override
   final bool isActive;
   @override
   @TimestampConverter()
@@ -196,7 +244,7 @@ class _$WorkspaceImpl implements _Workspace {
 
   @override
   String toString() {
-    return 'Workspace(id: $id, name: $name, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Workspace(id: $id, name: $name, location: $location, country: $country, companyLogoUrl: $companyLogoUrl, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -206,6 +254,11 @@ class _$WorkspaceImpl implements _Workspace {
             other is _$WorkspaceImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
+            (identical(other.location, location) ||
+                other.location == location) &&
+            (identical(other.country, country) || other.country == country) &&
+            (identical(other.companyLogoUrl, companyLogoUrl) ||
+                other.companyLogoUrl == companyLogoUrl) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
             (identical(other.createdAt, createdAt) ||
@@ -216,8 +269,17 @@ class _$WorkspaceImpl implements _Workspace {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, name, isActive, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    name,
+    location,
+    country,
+    companyLogoUrl,
+    isActive,
+    createdAt,
+    updatedAt,
+  );
 
   /// Create a copy of Workspace
   /// with the given fields replaced by the non-null parameter values.
@@ -237,6 +299,9 @@ abstract class _Workspace implements Workspace {
   const factory _Workspace({
     required final String id,
     required final String name,
+    required final String location,
+    required final String country,
+    final String? companyLogoUrl,
     required final bool isActive,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
@@ -249,6 +314,12 @@ abstract class _Workspace implements Workspace {
   String get id;
   @override
   String get name;
+  @override
+  String get location;
+  @override
+  String get country;
+  @override
+  String? get companyLogoUrl;
   @override
   bool get isActive;
   @override

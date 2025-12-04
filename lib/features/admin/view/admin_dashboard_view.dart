@@ -6,6 +6,8 @@ import '../../../app/router/app_route.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../auth/view/auth_view.dart';
 import '../../auth/view/widgets/user_menu_button.dart';
+import '../../workspace/view/widgets/no_workspace_dialog.dart';
+import '../../hot_desk_booking/providers/workspace_providers.dart';
 import '../models/admin_dashboard_section.dart';
 import '../providers/admin_dashboard_providers.dart';
 import '../viewmodel/admin_dashboard_view_model.dart';
@@ -14,11 +16,42 @@ import 'admin_dashboard_view.monitor.dart';
 import 'admin_dashboard_view.phone.dart';
 import 'admin_dashboard_view.tablet.dart';
 
-class AdminDashboardView extends ConsumerWidget {
+class AdminDashboardView extends ConsumerStatefulWidget {
   const AdminDashboardView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardView> createState() => _AdminDashboardViewState();
+}
+
+class _AdminDashboardViewState extends ConsumerState<AdminDashboardView> {
+  bool _hasCheckedWorkspace = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkWorkspace();
+    });
+  }
+
+  void _checkWorkspace() {
+    if (_hasCheckedWorkspace) return;
+    _hasCheckedWorkspace = true;
+
+    final workspacesAsync = ref.read(activeWorkspacesFutureProvider);
+    workspacesAsync.whenData((workspaces) {
+      if (workspaces.isEmpty && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const NoWorkspaceDialog(),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
     if (user == null) {

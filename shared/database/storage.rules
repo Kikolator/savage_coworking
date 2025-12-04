@@ -13,7 +13,15 @@ function signedIn() {
 service firebase.storage {
   match /b/{bucket}/o {
     // Desk images: admins can upload, authenticated users can read
-    match /desks/{deskId}/image.{extension} {
+    // Matches any file in desks/{deskId}/ directory
+    match /desks/{deskId}/{fileName} {
+      allow write: if isAdmin();
+      allow read: if signedIn();
+    }
+
+    // Workspace logos: admins can upload, authenticated users can read
+    // Matches any file in workspaces/{workspaceId}/ directory
+    match /workspaces/{workspaceId}/{fileName} {
       allow write: if isAdmin();
       allow read: if signedIn();
     }
