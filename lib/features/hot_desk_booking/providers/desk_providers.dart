@@ -22,3 +22,9 @@ final availableDesksProvider = StreamProvider.autoDispose
   return service.watchAvailableDesks(workspaceId);
 });
 
+final allDesksProvider = StreamProvider.autoDispose
+    .family<List<Desk>, String?>((ref, workspaceId) {
+  final repository = ref.watch(deskRepositoryProvider);
+  return repository.watchDesks(workspaceId);
+});
+

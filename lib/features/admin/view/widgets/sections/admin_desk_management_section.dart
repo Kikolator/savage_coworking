@@ -6,31 +6,108 @@ import '../../../../hot_desk_booking/providers/desk_providers.dart';
 import 'desk_management/desk_list_widget.dart';
 import 'desk_management/create_desk_dialog.dart';
 
-class AdminDeskManagementSection extends ConsumerWidget {
+class AdminDeskManagementSection extends ConsumerStatefulWidget {
   const AdminDeskManagementSection({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDeskManagementSection> createState() =>
+      _AdminDeskManagementSectionState();
+}
+
+class _AdminDeskManagementSectionState
+    extends ConsumerState<AdminDeskManagementSection> {
+  bool _showInactiveDesks = false;
+
+  @override
+  Widget build(BuildContext context) {
     final workspaceId = ref.watch(selectedWorkspaceIdProvider);
-    final desksAsync = ref.watch(availableDesksProvider(workspaceId));
+    final desksAsync = _showInactiveDesks
+        ? ref.watch(allDesksProvider(workspaceId))
+        : ref.watch(availableDesksProvider(workspaceId));
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth <= 480;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Desk Management',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            FilledButton.icon(
-              onPressed: () => _showCreateDeskDialog(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('Add Desk'),
-            ),
-          ],
-        ),
+        if (isMobile) ...[
+          // Mobile: Stack vertically
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Desk Management',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              FilledButton.icon(
+                onPressed: () => _showCreateDeskDialog(context, ref),
+                icon: const Icon(Icons.add),
+                label: const Text('Add Desk'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Show inactive desks',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              Switch(
+                value: _showInactiveDesks,
+                onChanged: (value) {
+                  setState(() {
+                    _showInactiveDesks = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ] else ...[
+          // Desktop/Tablet: Horizontal layout
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Desk Management',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Show inactive desks',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: _showInactiveDesks,
+                        onChanged: (value) {
+                          setState(() {
+                            _showInactiveDesks = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  FilledButton.icon(
+                    onPressed: () => _showCreateDeskDialog(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Desk'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 16),
         workspaceId == null
             ? Center(
@@ -66,8 +143,13 @@ class AdminDeskManagementSection extends ConsumerWidget {
                       const SizedBox(height: 8),
                       FilledButton(
                         onPressed: () {
-                          // ignore: unused_result
-                          ref.refresh(availableDesksProvider(workspaceId));
+                          if (_showInactiveDesks) {
+                            // ignore: unused_result
+                            ref.refresh(allDesksProvider(workspaceId));
+                          } else {
+                            // ignore: unused_result
+                            ref.refresh(availableDesksProvider(workspaceId));
+                          }
                         },
                         child: const Text('Retry'),
                       ),
@@ -94,8 +176,11 @@ class AdminDeskManagementSection extends ConsumerWidget {
       context: context,
       builder: (context) => CreateDeskDialog(
         onDeskCreated: () {
+          // Refresh both providers to ensure UI is up to date
           // ignore: unused_result
           ref.refresh(availableDesksProvider(workspaceId));
+          // ignore: unused_result
+          ref.refresh(allDesksProvider(workspaceId));
         },
       ),
     );

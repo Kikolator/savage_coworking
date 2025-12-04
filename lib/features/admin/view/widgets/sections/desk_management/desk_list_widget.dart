@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../hot_desk_booking/models/desk.dart';
 import '../../../../../hot_desk_booking/providers/desk_providers.dart';
 import '../../../../../hot_desk_booking/providers/workspace_providers.dart';
+import '../../../../../workspace/providers/workspace_selection_providers.dart';
 import 'edit_desk_dialog.dart';
 
 class DeskListWidget extends ConsumerWidget {
@@ -112,13 +113,17 @@ class DeskListWidget extends ConsumerWidget {
   }
 
   void _showEditDialog(BuildContext context, WidgetRef ref, Desk desk) {
+    final workspaceId = ref.read(selectedWorkspaceIdProvider);
     showDialog(
       context: context,
       builder: (context) => EditDeskDialog(
         desk: desk,
         onDeskUpdated: () {
+          // Refresh both providers to ensure UI is up to date
           // ignore: unused_result
-          ref.refresh(availableDesksProvider(null));
+          ref.refresh(availableDesksProvider(workspaceId));
+          // ignore: unused_result
+          ref.refresh(allDesksProvider(workspaceId));
         },
       ),
     );
@@ -149,8 +154,12 @@ class DeskListWidget extends ConsumerWidget {
                     ),
                   );
                 } else {
+                  final workspaceId = ref.read(selectedWorkspaceIdProvider);
+                  // Refresh both providers to ensure UI is up to date
                   // ignore: unused_result
-                  ref.refresh(availableDesksProvider(null));
+                  ref.refresh(availableDesksProvider(workspaceId));
+                  // ignore: unused_result
+                  ref.refresh(allDesksProvider(workspaceId));
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Desk deleted successfully')),
                   );
@@ -168,6 +177,7 @@ class DeskListWidget extends ConsumerWidget {
   }
 
   void _toggleActive(BuildContext context, WidgetRef ref, Desk desk) {
+    final workspaceId = ref.read(selectedWorkspaceIdProvider);
     final service = ref.read(deskServiceProvider);
     service.updateDesk(desk.id, isActive: !desk.isActive).then((error) {
       if (context.mounted) {
@@ -179,8 +189,11 @@ class DeskListWidget extends ConsumerWidget {
             ),
           );
         } else {
+          // Refresh both providers to ensure UI is up to date
           // ignore: unused_result
-          ref.refresh(availableDesksProvider(null));
+          ref.refresh(availableDesksProvider(workspaceId));
+          // ignore: unused_result
+          ref.refresh(allDesksProvider(workspaceId));
         }
       }
     });
@@ -204,28 +217,65 @@ class _DeskListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(desk.name),
-      subtitle: Text('Workspace: $workspaceName'),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Switch(value: desk.isActive, onChanged: (_) => onToggleActive()),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: onEdit,
-            tooltip: 'Edit desk',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: onDelete,
-            tooltip: 'Delete desk',
-            color: Theme.of(context).colorScheme.error,
-          ),
-        ],
+    final isInactive = !desk.isActive;
+    final textColor = isInactive
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : null;
+
+    return Opacity(
+      opacity: isInactive ? 0.7 : 1.0,
+      child: ListTile(
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                desk.name,
+                style: TextStyle(color: textColor),
+              ),
+            ),
+            if (isInactive) ...[
+              const SizedBox(width: 8),
+              Chip(
+                label: const Text('Inactive'),
+                labelStyle: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                backgroundColor: Theme.of(context)
+                    .colorScheme
+                    .surfaceVariant
+                    .withOpacity(0.5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+          ],
+        ),
+        subtitle: Text(
+          'Workspace: $workspaceName',
+          style: TextStyle(color: textColor),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Switch(value: desk.isActive, onChanged: (_) => onToggleActive()),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: onEdit,
+              tooltip: 'Edit desk',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: onDelete,
+              tooltip: 'Delete desk',
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ],
+        ),
+        leading: _buildLeading(context),
       ),
-      leading: _buildLeading(context),
     );
   }
 
