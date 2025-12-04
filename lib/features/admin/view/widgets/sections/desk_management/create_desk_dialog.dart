@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../../workspace/providers/workspace_selection_providers.dart';
 import '../../../../../hot_desk_booking/providers/desk_providers.dart';
 import '../../../../../hot_desk_booking/providers/workspace_providers.dart';
 import '../../../../../hot_desk_booking/providers/hot_desk_booking_providers.dart';
@@ -67,6 +68,18 @@ class _CreateDeskDialogState extends ConsumerState<CreateDeskDialog> {
   @override
   Widget build(BuildContext context) {
     final workspacesAsync = ref.watch(activeWorkspacesFutureProvider);
+    final selectedWorkspaceId = ref.watch(selectedWorkspaceIdProvider);
+
+    // Initialize workspace selection with selected workspace if not already set
+    if (_selectedWorkspaceId == null && selectedWorkspaceId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedWorkspaceId = selectedWorkspaceId;
+          });
+        }
+      });
+    }
 
     return AlertDialog(
       title: const Text('Create New Desk'),

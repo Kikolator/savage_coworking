@@ -8,7 +8,7 @@ final adminDashboardServiceProvider = Provider<AdminDashboardService>((ref) {
 });
 
 final adminDashboardViewModelProvider =
-    StateNotifierProvider<AdminDashboardViewModel, AdminDashboardState>((ref) {
+    StateNotifierProvider.autoDispose<AdminDashboardViewModel, AdminDashboardState>((ref) {
   final service = ref.watch(adminDashboardServiceProvider);
-  return AdminDashboardViewModel(service)..loadDashboard();
+  return AdminDashboardViewModel(service);
 });

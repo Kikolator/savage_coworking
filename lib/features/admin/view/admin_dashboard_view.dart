@@ -6,6 +6,7 @@ import '../../../app/router/app_route.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../auth/view/auth_view.dart';
 import '../../auth/view/widgets/user_menu_button.dart';
+import '../../workspace/providers/workspace_selection_providers.dart';
 import '../../workspace/view/widgets/no_workspace_dialog.dart';
 import '../../hot_desk_booking/providers/workspace_providers.dart';
 import '../models/admin_dashboard_section.dart';
@@ -25,13 +26,24 @@ class AdminDashboardView extends ConsumerStatefulWidget {
 
 class _AdminDashboardViewState extends ConsumerState<AdminDashboardView> {
   bool _hasCheckedWorkspace = false;
+  bool _hasLoadedDashboard = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkWorkspace();
+      _loadDashboard();
     });
+  }
+
+  void _loadDashboard() {
+    if (_hasLoadedDashboard) return;
+    _hasLoadedDashboard = true;
+
+    final workspaceId = ref.read(selectedWorkspaceIdProvider);
+    final viewModel = ref.read(adminDashboardViewModelProvider.notifier);
+    viewModel.loadDashboard(workspaceId: workspaceId);
   }
 
   void _checkWorkspace() {
@@ -64,6 +76,14 @@ class _AdminDashboardViewState extends ConsumerState<AdminDashboardView> {
     final state = ref.watch(adminDashboardViewModelProvider);
     final viewModel = ref.read(adminDashboardViewModelProvider.notifier);
     final authViewModel = ref.read(authViewModelProvider.notifier);
+    final workspaceId = ref.watch(selectedWorkspaceIdProvider);
+
+    // Listen for workspace changes and reload dashboard
+    ref.listen<String?>(selectedWorkspaceIdProvider, (previous, next) {
+      if (previous != next && mounted) {
+        viewModel.loadDashboard(workspaceId: next);
+      }
+    });
 
     final props = AdminDashboardViewProps(
       state: state,
@@ -73,7 +93,7 @@ class _AdminDashboardViewState extends ConsumerState<AdminDashboardView> {
         onUserDashboardNavigate: () => context.go(AppRoute.home.path),
       ),
       onSectionSelected: viewModel.selectSection,
-      onRefresh: viewModel.loadDashboard,
+      onRefresh: () => viewModel.loadDashboard(workspaceId: workspaceId),
     );
 
     final width = MediaQuery.of(context).size.width;

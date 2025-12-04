@@ -4,8 +4,12 @@ import '../models/admin_dashboard_data.dart';
 import '../models/admin_dashboard_section.dart';
 
 class AdminDashboardService {
-  Future<AdminDashboardData> loadDashboardSnapshot() async {
+  Future<AdminDashboardData> loadDashboardSnapshot({String? workspaceId}) async {
     await Future<void>.delayed(const Duration(milliseconds: 350));
+    // TODO: When real data is implemented, filter by workspaceId:
+    // - Filter bookings by workspaceId
+    // - Filter desks by workspaceId
+    // - Calculate analytics for selected workspace only
     return AdminDashboardData(
       summaryCards: const [
         AdminSummaryCardData(
