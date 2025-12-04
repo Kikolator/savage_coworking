@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -168,11 +169,19 @@ class _CreateDeskDialogState extends ConsumerState<CreateDeskDialog> {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(_selectedImage!.path),
+                      child: SizedBox(
                         height: 150,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
+                        child: kIsWeb
+                            ? Image.network(
+                                _selectedImage!.path,
+                                height: 150,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.file(
+                                File(_selectedImage!.path),
+                                height: 150,
+                                fit: BoxFit.cover,
+                              ),
                       ),
                     ),
                     Positioned(
