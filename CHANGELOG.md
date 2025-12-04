@@ -56,4 +56,5 @@ All notable changes to this project will be documented in this file.
 - Fixed error handling for Firestore JavaScript objects on web platform, preventing type mismatch errors when booking desks.
 - Fixed RangeError when displaying booking confirmation dialog with empty booking ID.
 - Fixed scroll behavior in hot desk booking screen by removing nested scroll views and making entire page scrollable.
+- Fixed debug console clutter from continuous StreamProvider updates by adding filtering capabilities and replacing periodic polling with Firestore snapshots.
 
