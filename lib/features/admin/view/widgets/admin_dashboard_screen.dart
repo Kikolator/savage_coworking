@@ -9,7 +9,7 @@ import 'sections/admin_meeting_rooms_section.dart';
 import 'sections/admin_members_section.dart';
 import 'sections/admin_overview_section.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({
     super.key,
     required this.props,
@@ -26,8 +26,27 @@ class AdminDashboardScreen extends StatelessWidget {
   final bool showBottomNav;
 
   @override
+  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final state = props.state;
+    final state = widget.props.state;
     final selectedIndex = AdminDashboardSection.values.indexOf(
       state.selectedSection,
     );
@@ -38,20 +57,21 @@ class AdminDashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             tooltip: 'Refresh data',
-            onPressed: props.onRefresh,
+            onPressed: widget.props.onRefresh,
             icon: const Icon(Icons.refresh),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: Builder(builder: props.userMenuBuilder),
+            child: Builder(builder: widget.props.userMenuBuilder),
           ),
         ],
       ),
-      bottomNavigationBar: showBottomNav
+      bottomNavigationBar: widget.showBottomNav
           ? NavigationBar(
               selectedIndex: selectedIndex,
-              onDestinationSelected: (index) =>
-                  props.onSectionSelected(AdminDashboardSection.values[index]),
+              onDestinationSelected: (index) => widget.props.onSectionSelected(
+                AdminDashboardSection.values[index],
+              ),
               destinations: AdminDashboardSection.values
                   .map(
                     (section) => NavigationDestination(
@@ -72,13 +92,13 @@ class AdminDashboardScreen extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
             Expanded(
-              child: useNavigationRail
+              child: widget.useNavigationRail
                   ? Row(
                       children: [
                         NavigationRail(
                           selectedIndex: selectedIndex,
                           onDestinationSelected: (index) =>
-                              props.onSectionSelected(
+                              widget.props.onSectionSelected(
                                 AdminDashboardSection.values[index],
                               ),
                           labelType: NavigationRailLabelType.all,
@@ -105,12 +125,14 @@ class AdminDashboardScreen extends StatelessWidget {
   Widget _buildContent(BuildContext context) {
     final child = _buildSectionContent(context);
     return Scrollbar(
+      controller: _scrollController,
       child: SingleChildScrollView(
-        padding: contentPadding,
+        controller: _scrollController,
+        padding: widget.contentPadding,
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: maxContentWidth ?? double.infinity,
+              maxWidth: widget.maxContentWidth ?? double.infinity,
             ),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
@@ -123,12 +145,12 @@ class AdminDashboardScreen extends StatelessWidget {
   }
 
   Widget _buildSectionContent(BuildContext context) {
-    final state = props.state;
+    final state = widget.props.state;
     final data = state.data;
     final error = state.errorMessage;
 
     if (error != null) {
-      return _ErrorState(message: error, onRetry: props.onRefresh);
+      return _ErrorState(message: error, onRetry: widget.props.onRefresh);
     }
 
     if (data == null) {
@@ -141,7 +163,7 @@ class AdminDashboardScreen extends StatelessWidget {
       case AdminDashboardSection.overview:
         return AdminOverviewSection(
           data: data,
-          onNavigateToSection: props.onSectionSelected,
+          onNavigateToSection: widget.props.onSectionSelected,
         );
       case AdminDashboardSection.hotDesks:
         return const AdminDeskManagementSection();
