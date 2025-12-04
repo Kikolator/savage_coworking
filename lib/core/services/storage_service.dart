@@ -14,13 +14,27 @@ class StorageService {
     required XFile imageFile,
   }) async {
     try {
-      // Get file extension
-      final extension = imageFile.path.split('.').last.toLowerCase();
+      // Get file extension from name (works on both web and mobile)
+      // On web, path is a blob URL, so we use name instead
+      String extension = '';
+      if (imageFile.name.isNotEmpty) {
+        final parts = imageFile.name.split('.');
+        if (parts.length > 1) {
+          extension = parts.last.toLowerCase();
+        }
+      }
 
-      print('Extension: $extension');
+      // Fallback to path if name doesn't have extension (mobile)
+      if (extension.isEmpty && imageFile.path.isNotEmpty) {
+        final parts = imageFile.path.split('.');
+        if (parts.length > 1) {
+          extension = parts.last.toLowerCase();
+        }
+      }
 
       // Validate file extension
-      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+      if (extension.isEmpty ||
+          !['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
         throw Exception('Invalid image format. Please use JPG, PNG, or WebP.');
       }
 
@@ -63,11 +77,27 @@ class StorageService {
     required XFile imageFile,
   }) async {
     try {
-      // Get file extension
-      final extension = imageFile.path.split('.').last.toLowerCase();
+      // Get file extension from name (works on both web and mobile)
+      // On web, path is a blob URL, so we use name instead
+      String extension = '';
+      if (imageFile.name.isNotEmpty) {
+        final parts = imageFile.name.split('.');
+        if (parts.length > 1) {
+          extension = parts.last.toLowerCase();
+        }
+      }
+
+      // Fallback to path if name doesn't have extension (mobile)
+      if (extension.isEmpty && imageFile.path.isNotEmpty) {
+        final parts = imageFile.path.split('.');
+        if (parts.length > 1) {
+          extension = parts.last.toLowerCase();
+        }
+      }
 
       // Validate file extension
-      if (!['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
+      if (extension.isEmpty ||
+          !['jpg', 'jpeg', 'png', 'webp'].contains(extension)) {
         throw Exception('Invalid image format. Please use JPG, PNG, or WebP.');
       }
 

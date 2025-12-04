@@ -132,45 +132,59 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
 
     if (!mounted) return;
 
-    setState(() => _isSubmitting = false);
-
     if (error != null) {
+      setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(error),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-    } else if (workspace != null) {
-      // If logo was uploaded with temp ID, re-upload with actual workspace ID
-      if (_selectedImage != null && logoUrl != null) {
-        try {
-          final storageService = ref.read(storageServiceProvider);
-          final newLogoUrl = await storageService.uploadWorkspaceLogo(
-            workspaceId: workspace.id,
-            imageFile: _selectedImage!,
-          );
-          if (newLogoUrl != null && newLogoUrl != logoUrl) {
-            // Update workspace with new logo URL
-            await service.updateWorkspace(
-              workspace.id,
-              companyLogoUrl: newLogoUrl,
-            );
-            // Delete old logo
-            await storageService.deleteWorkspaceLogo(logoUrl);
-          }
-        } catch (e) {
-          // Log error but don't fail the creation
-          debugPrint('Failed to update logo URL: $e');
-        }
-      }
-
-      Navigator.of(context).pop(true); // Return true to indicate success
-      widget.onWorkspaceCreated();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Workspace created successfully')),
-      );
+      return;
     }
+
+    if (workspace == null) {
+      setState(() => _isSubmitting = false);
+      return;
+    }
+
+    // If logo was uploaded with temp ID, re-upload with actual workspace ID
+    // Do this BEFORE closing the dialog to avoid disposed view errors
+    if (_selectedImage != null && logoUrl != null) {
+      try {
+        if (!mounted) return;
+        final storageService = ref.read(storageServiceProvider);
+        final newLogoUrl = await storageService.uploadWorkspaceLogo(
+          workspaceId: workspace.id,
+          imageFile: _selectedImage!,
+        );
+        if (newLogoUrl != null && newLogoUrl != logoUrl) {
+          // Update workspace with new logo URL
+          await service.updateWorkspace(
+            workspace.id,
+            companyLogoUrl: newLogoUrl,
+          );
+          // Delete old logo
+          await storageService.deleteWorkspaceLogo(logoUrl);
+        }
+      } catch (e) {
+        // Log error but don't fail the creation
+        debugPrint('Failed to update logo URL: $e');
+      }
+    }
+
+    // All async operations complete, now close dialog and show success
+    if (!mounted) return;
+
+    setState(() => _isSubmitting = false);
+
+    // Show success message before closing dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Workspace created successfully')),
+    );
+
+    Navigator.of(context).pop(true); // Return true to indicate success
+    widget.onWorkspaceCreated();
   }
 
   @override

@@ -15,7 +15,7 @@ void main() async {
   connectFirebaseEmulators();
 
   // Initialize debug configuration
-  DebugConfig.initialize(enableProviderLogging: false);
+  DebugConfig.initialize(enableProviderLogging: true);
 
   // Create debug observer (only active in debug mode)
   final debugObserver = DebugProviderObserver();
