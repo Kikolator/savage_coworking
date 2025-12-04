@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../hot_desk_booking/providers/workspace_providers.dart';
 import '../../../hot_desk_booking/providers/hot_desk_booking_providers.dart';
+import '../../../auth/providers/auth_providers.dart';
+import '../../providers/workspace_selection_providers.dart';
 
 class CreateWorkspaceDialog extends ConsumerStatefulWidget {
   const CreateWorkspaceDialog({super.key, required this.onWorkspaceCreated});
@@ -90,101 +92,88 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
 
     setState(() => _isSubmitting = true);
 
-    String? logoUrl;
-    if (_selectedImage != null) {
-      try {
-        // We'll upload the logo after creating the workspace
-        // For now, we'll use a temporary ID
-        final tempWorkspaceId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-        final storageService = ref.read(storageServiceProvider);
-        logoUrl = await storageService.uploadWorkspaceLogo(
-          workspaceId: tempWorkspaceId,
-          imageFile: _selectedImage!,
-        );
-        if (logoUrl == null) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Workspace created but logo upload failed.'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logo upload failed: ${e.toString()}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        // Continue with workspace creation even if logo upload fails
-      }
-    }
-
+    // Create workspace first (without logo)
     final service = ref.read(workspaceServiceProvider);
     final (workspace, error) = await service.createWorkspace(
       name: _nameController.text,
       location: _locationController.text,
       country: _countryController.text,
-      companyLogoUrl: logoUrl,
+      companyLogoUrl: null, // Upload logo after workspace is created
     );
 
-    if (!mounted) return;
-
-    if (error != null) {
-      setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-      return;
-    }
-
-    if (workspace == null) {
+    if (!mounted) {
       setState(() => _isSubmitting = false);
       return;
     }
 
-    // If logo was uploaded with temp ID, re-upload with actual workspace ID
-    // Do this BEFORE closing the dialog to avoid disposed view errors
-    if (_selectedImage != null && logoUrl != null) {
+    if (error != null || workspace == null) {
+      setState(() => _isSubmitting = false);
+      // Close dialog first, then show error
+      Navigator.of(context).pop(false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error ?? 'Failed to create workspace'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Upload logo with actual workspace ID
+    String? logoUrl;
+    if (_selectedImage != null) {
       try {
-        if (!mounted) return;
         final storageService = ref.read(storageServiceProvider);
-        final newLogoUrl = await storageService.uploadWorkspaceLogo(
+        logoUrl = await storageService.uploadWorkspaceLogo(
           workspaceId: workspace.id,
           imageFile: _selectedImage!,
         );
-        if (newLogoUrl != null && newLogoUrl != logoUrl) {
-          // Update workspace with new logo URL
+        if (logoUrl != null) {
+          // Update workspace with logo URL
           await service.updateWorkspace(
             workspace.id,
-            companyLogoUrl: newLogoUrl,
+            companyLogoUrl: logoUrl,
           );
-          // Delete old logo
-          await storageService.deleteWorkspaceLogo(logoUrl);
         }
       } catch (e) {
         // Log error but don't fail the creation
-        debugPrint('Failed to update logo URL: $e');
+        debugPrint('Failed to upload logo: $e');
+        // Continue even if logo upload fails
       }
     }
 
-    // All async operations complete, now close dialog and show success
-    if (!mounted) return;
+    // Auto-select the newly created workspace
+    try {
+      final authState = ref.read(authViewModelProvider);
+      final userId = authState.user?.id;
+      if (userId != null && mounted) {
+        await switchWorkspace(ref, userId, workspace.id);
+      }
+    } catch (e) {
+      debugPrint('Failed to auto-select workspace: $e');
+      // Continue even if auto-select fails
+    }
+
+    // All async operations complete
+    if (!mounted) {
+      setState(() => _isSubmitting = false);
+      return;
+    }
 
     setState(() => _isSubmitting = false);
 
-    // Show success message before closing dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workspace created successfully')),
-    );
-
-    Navigator.of(context).pop(true); // Return true to indicate success
+    // Close dialog first, then show success and trigger callback
+    Navigator.of(context).pop(true);
     widget.onWorkspaceCreated();
+    
+    // Show success message after dialog is closed
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Workspace created successfully')),
+      );
+    }
   }
 
   @override
@@ -309,3 +298,4 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     );
   }
 }
+
