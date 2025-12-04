@@ -132,10 +132,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
         );
         if (logoUrl != null) {
           // Update workspace with logo URL
-          await service.updateWorkspace(
-            workspace.id,
-            companyLogoUrl: logoUrl,
-          );
+          await service.updateWorkspace(workspace.id, companyLogoUrl: logoUrl);
         }
       } catch (e) {
         // Log error but don't fail the creation
@@ -167,7 +164,7 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     // Close dialog first, then show success and trigger callback
     Navigator.of(context).pop(true);
     widget.onWorkspaceCreated();
-    
+
     // Show success message after dialog is closed
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -298,4 +295,3 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
     );
   }
 }
-

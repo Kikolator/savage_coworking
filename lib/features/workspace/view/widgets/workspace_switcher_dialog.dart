@@ -54,10 +54,12 @@ class WorkspaceSwitcherDialog extends ConsumerWidget {
                       ),
                     );
 
-                    // If workspace was created, refresh the list
+                    // If workspace was created, close this dialog too
                     if (created == true && context.mounted) {
                       // Refresh workspace list
                       ref.invalidate(activeWorkspacesFutureProvider);
+                      // Close the switch workspace dialog so snackbars are visible
+                      Navigator.of(context).pop();
                     }
                   },
                 ),
@@ -92,13 +94,12 @@ class WorkspaceSwitcherDialog extends ConsumerWidget {
                         ),
                       );
 
-                      // If workspace was created, refresh the list
+                      // If workspace was created, close this dialog too
                       if (created == true && context.mounted) {
                         // Refresh workspace list
                         ref.invalidate(activeWorkspacesFutureProvider);
-                        // Wait a bit for the list to refresh, then show updated list
-                        await Future.delayed(const Duration(milliseconds: 500));
-                        // The dialog will automatically refresh via the provider watch
+                        // Close the switch workspace dialog so snackbars are visible
+                        Navigator.of(context).pop();
                       }
                     },
                   );
