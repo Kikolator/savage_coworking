@@ -55,6 +55,21 @@ class UserRepository {
     return doc.data();
   }
 
+  /// Watches a user document by ID.
+  /// Returns a stream that emits the user whenever the document changes.
+  /// Returns null if the user doesn't exist.
+  Stream<User?> watchUser(String id) {
+    return _collection.doc(id).snapshots().map((snapshot) {
+      if (!snapshot.exists) return null;
+      try {
+        return snapshot.data();
+      } catch (e) {
+        // Handle errors gracefully by returning null
+        return null;
+      }
+    });
+  }
+
   /// Checks if a user document exists.
   Future<bool> userExists(String id) async {
     final doc = await _collection.doc(id).get();

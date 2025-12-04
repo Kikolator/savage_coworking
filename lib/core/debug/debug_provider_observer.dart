@@ -44,6 +44,40 @@ String _formatStateValue(Object? value) {
   return str;
 }
 
+/// Checks if a provider should be logged based on configuration.
+bool _shouldLogProvider(ProviderBase<Object?> provider, String providerName) {
+  // Check if provider logging is disabled
+  if (!DebugConfig.enableProviderLogging) {
+    return false;
+  }
+
+  final nameLower = providerName.toLowerCase();
+
+  // Check whitelist (if non-empty, only log included providers)
+  final included = DebugConfig.includedProviderNames;
+  if (included.isNotEmpty && !included.contains(nameLower)) {
+    return false;
+  }
+
+  // Check blacklist
+  if (DebugConfig.excludedProviderNames.contains(nameLower)) {
+    return false;
+  }
+
+  // Check if it's a StreamProvider and logging is disabled
+  final typeStr = provider.runtimeType.toString();
+  if (typeStr.contains('StreamProvider') && !DebugConfig.logStreamProviders) {
+    return false;
+  }
+
+  // Check if it's an autoDispose provider and logging is disabled
+  if (typeStr.contains('AutoDispose') && !DebugConfig.logAutoDisposeProviders) {
+    return false;
+  }
+
+  return true;
+}
+
 /// Riverpod provider observer that logs provider lifecycle and state changes.
 ///
 /// Only active when [DebugConfig.enableProviderLogging] is true.
@@ -55,11 +89,11 @@ class DebugProviderObserver extends ProviderObserver {
     Object? value,
     ProviderContainer container,
   ) {
-    if (!DebugConfig.enableProviderLogging) {
+    final providerName = _extractProviderName(provider);
+    if (!_shouldLogProvider(provider, providerName)) {
       return;
     }
 
-    final providerName = _extractProviderName(provider);
     final stateStr = _formatStateValue(value);
     debugLog('ProviderObserver', '$providerName added', stateStr);
   }
@@ -71,11 +105,11 @@ class DebugProviderObserver extends ProviderObserver {
     Object? newValue,
     ProviderContainer container,
   ) {
-    if (!DebugConfig.enableProviderLogging) {
+    final providerName = _extractProviderName(provider);
+    if (!_shouldLogProvider(provider, providerName)) {
       return;
     }
 
-    final providerName = _extractProviderName(provider);
     final prevStr = _formatStateValue(previousValue);
     final newStr = _formatStateValue(newValue);
 
@@ -94,11 +128,11 @@ class DebugProviderObserver extends ProviderObserver {
     ProviderBase<Object?> provider,
     ProviderContainer container,
   ) {
-    if (!DebugConfig.enableProviderLogging) {
+    final providerName = _extractProviderName(provider);
+    if (!_shouldLogProvider(provider, providerName)) {
       return;
     }
 
-    final providerName = _extractProviderName(provider);
     debugLog('ProviderObserver', '$providerName disposed');
   }
 
@@ -109,11 +143,12 @@ class DebugProviderObserver extends ProviderObserver {
     StackTrace stackTrace,
     ProviderContainer container,
   ) {
+    final providerName = _extractProviderName(provider);
+    // Always log errors, even if provider is filtered
     if (!DebugConfig.enableProviderLogging) {
       return;
     }
 
-    final providerName = _extractProviderName(provider);
     debugError('ProviderObserver', '$providerName failed', error, stackTrace);
   }
 }

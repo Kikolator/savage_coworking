@@ -9,23 +9,24 @@ import '../../hot_desk_booking/providers/workspace_providers.dart';
 final currentUserDocumentProvider = StreamProvider.autoDispose<User?>((ref) {
   final authState = ref.watch(authViewModelProvider);
   final authUser = authState.user;
-  
+
   if (authUser == null) {
     return Stream.value(null);
   }
 
   final userRepository = ref.watch(userRepositoryProvider);
-  return Stream.periodic(const Duration(seconds: 1), (_) => null)
-      .asyncMap((_) => userRepository.getUser(authUser.id));
+  return userRepository.watchUser(authUser.id);
 });
 
 /// Provider that watches the current user's selected workspace
 final selectedWorkspaceProvider = StreamProvider.autoDispose<Workspace?>((ref) {
   final userDocAsync = ref.watch(currentUserDocumentProvider);
-  
+
   return userDocAsync.when(
     data: (user) {
-      if (user == null || user.selectedWorkspaceId == null || user.selectedWorkspaceId!.isEmpty) {
+      if (user == null ||
+          user.selectedWorkspaceId == null ||
+          user.selectedWorkspaceId!.isEmpty) {
         return Stream.value(null);
       }
 
@@ -52,8 +53,11 @@ final selectedWorkspaceIdProvider = Provider.autoDispose<String?>((ref) {
 });
 
 /// Helper function to switch workspace
-Future<String?> switchWorkspace(WidgetRef ref, String userId, String workspaceId) async {
+Future<String?> switchWorkspace(
+  WidgetRef ref,
+  String userId,
+  String workspaceId,
+) async {
   final authService = ref.read(authServiceProvider);
   return await authService.switchWorkspace(userId, workspaceId);
 }
-
