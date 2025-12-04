@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../hot_desk_booking/models/desk.dart';
 import '../../../../../hot_desk_booking/providers/desk_providers.dart';
+import '../../../../../hot_desk_booking/providers/workspace_providers.dart';
 import 'edit_desk_dialog.dart';
 
 class DeskListWidget extends ConsumerWidget {
@@ -12,6 +13,8 @@ class DeskListWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final workspacesAsync = ref.watch(activeWorkspacesFutureProvider);
+
     if (desks.isEmpty) {
       return Card(
         child: Padding(
@@ -42,21 +45,68 @@ class DeskListWidget extends ConsumerWidget {
       );
     }
 
-    return Card(
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: desks.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
-        itemBuilder: (context, index) {
-          final desk = desks[index];
-          return _DeskListItem(
-            desk: desk,
-            onEdit: () => _showEditDialog(context, ref, desk),
-            onDelete: () => _showDeleteConfirmation(context, ref, desk),
-            onToggleActive: () => _toggleActive(context, ref, desk),
-          );
-        },
+    return workspacesAsync.when(
+      data: (workspaces) {
+        final workspaceNameMap = {
+          for (var workspace in workspaces) workspace.id: workspace.name
+        };
+
+        return Card(
+          child: ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: desks.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final desk = desks[index];
+              return _DeskListItem(
+                desk: desk,
+                workspaceName: workspaceNameMap[desk.workspaceId] ?? desk.workspaceId,
+                onEdit: () => _showEditDialog(context, ref, desk),
+                onDelete: () => _showDeleteConfirmation(context, ref, desk),
+                onToggleActive: () => _toggleActive(context, ref, desk),
+              );
+            },
+          ),
+        );
+      },
+      loading: () => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      ),
+      error: (error, stack) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Error loading workspaces: $error',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+              const SizedBox(height: 8),
+              // Fallback to showing desks without workspace names
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: desks.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final desk = desks[index];
+                  return _DeskListItem(
+                    desk: desk,
+                    workspaceName: desk.workspaceId,
+                    onEdit: () => _showEditDialog(context, ref, desk),
+                    onDelete: () => _showDeleteConfirmation(context, ref, desk),
+                    onToggleActive: () => _toggleActive(context, ref, desk),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -140,12 +190,14 @@ class DeskListWidget extends ConsumerWidget {
 class _DeskListItem extends StatelessWidget {
   const _DeskListItem({
     required this.desk,
+    required this.workspaceName,
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
   });
 
   final Desk desk;
+  final String workspaceName;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
@@ -154,7 +206,7 @@ class _DeskListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       title: Text(desk.name),
-      subtitle: Text('Workspace: ${desk.workspaceId}'),
+      subtitle: Text('Workspace: $workspaceName'),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -173,12 +225,49 @@ class _DeskListItem extends StatelessWidget {
           ),
         ],
       ),
-      leading: Icon(
-        desk.isActive ? Icons.chair_alt : Icons.chair_alt_outlined,
-        color: desk.isActive
-            ? Theme.of(context).colorScheme.primary
-            : Theme.of(context).colorScheme.onSurfaceVariant,
-      ),
+      leading: _buildLeading(context),
+    );
+  }
+
+  Widget _buildLeading(BuildContext context) {
+    if (desk.imageUrl != null && desk.imageUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Image.network(
+            desk.imageUrl!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                desk.isActive ? Icons.chair_alt : Icons.chair_alt_outlined,
+                color: desk.isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              );
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    return Icon(
+      desk.isActive ? Icons.chair_alt : Icons.chair_alt_outlined,
+      color: desk.isActive
+          ? Theme.of(context).colorScheme.primary
+          : Theme.of(context).colorScheme.onSurfaceVariant,
     );
   }
 }
