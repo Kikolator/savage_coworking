@@ -88,6 +88,114 @@ service cloud.firestore {
         && (isAdmin() || (immutableDeskBookingFields(oldData, newData) && validDeskBookingTransition(oldData.status, newData.status)));
     }
 
+    function isValidSubscriptionStatus(status) {
+      return status in ['active', 'cancelled', 'expired', 'trial', 'past_due'];
+    }
+
+    function hasValidSubscriptionCoreFields(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.planName is string
+        && data.status is string
+        && isValidSubscriptionStatus(data.status)
+        && data.stripeCustomerId is string
+        && data.renewsAutomatically is bool
+        && data.currentPeriodStart is timestamp
+        && data.currentPeriodEnd is timestamp
+        && data.cancelAtPeriodEnd is bool
+        && data.deskHours is number
+        && data.meetingRoomHours is number
+        && data.deskHoursUsed is number
+        && data.meetingRoomHoursUsed is number
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.currentPeriodEnd.toMillis() > data.currentPeriodStart.toMillis()
+        && data.deskHours >= 0
+        && data.meetingRoomHours >= 0
+        && data.deskHoursUsed >= 0
+        && data.meetingRoomHoursUsed >= 0;
+    }
+
+    function hasValidSubscriptionOptionals(data) {
+      return (('stripeSubscriptionId' in data) ? data.stripeSubscriptionId is string : true)
+        && (('stripePaymentIntentId' in data) ? data.stripePaymentIntentId is string : true);
+    }
+
+    function validSubscriptionCreate(data) {
+      return hasValidSubscriptionCoreFields(data)
+        && hasValidSubscriptionOptionals(data)
+        && data.createdAt == data.updatedAt
+        && (data.renewsAutomatically == false || (data.renewsAutomatically == true && 'stripeSubscriptionId' in data && data.stripeSubscriptionId is string))
+        && (data.deskHours == 0 || data.deskHoursUsed <= data.deskHours)
+        && (data.meetingRoomHours == 0 || data.meetingRoomHoursUsed <= data.meetingRoomHours);
+    }
+
+    function immutableSubscriptionFields(oldData, newData) {
+      return newData.userId == oldData.userId
+        && newData.planId == oldData.planId
+        && newData.createdAt == oldData.createdAt;
+    }
+
+    function validSubscriptionTransition(oldStatus, newStatus) {
+      return (oldStatus == 'trial' && (newStatus == 'active' || newStatus == 'cancelled'))
+        || (oldStatus == 'active' && (newStatus == 'past_due' || newStatus == 'cancelled' || newStatus == 'expired'))
+        || (oldStatus == 'past_due' && (newStatus == 'active' || newStatus == 'cancelled' || newStatus == 'expired'))
+        || (oldStatus == 'cancelled' && newStatus == 'expired')
+        || newStatus == oldStatus
+        || isAdmin();
+    }
+
+    function validSubscriptionUpdate(oldData, newData) {
+      return hasValidSubscriptionCoreFields(newData)
+        && hasValidSubscriptionOptionals(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'minutes')
+        && immutableSubscriptionFields(oldData, newData)
+        && (isAdmin() || validSubscriptionTransition(oldData.status, newData.status))
+        && (newData.deskHours == 0 || newData.deskHoursUsed <= newData.deskHours)
+        && (newData.meetingRoomHours == 0 || newData.meetingRoomHoursUsed <= newData.meetingRoomHours);
+    }
+
+    function isValidSubscriptionInterval(interval) {
+      return interval in ['month', 'one_off'];
+    }
+
+    function hasValidSubscriptionPlanCoreFields(data) {
+      return data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.price is int
+        && data.price > 0
+        && data.currency is string
+        && data.currency.size() == 3
+        && data.interval is string
+        && isValidSubscriptionInterval(data.interval)
+        && data.deskHours is number
+        && data.meetingRoomHours is number
+        && data.deskHours >= 0
+        && data.meetingRoomHours >= 0
+        && data.features is list
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function hasValidSubscriptionPlanOptionals(data) {
+      return (('stripePriceId' in data) ? data.stripePriceId is string : true)
+        && (('stripeProductId' in data) ? data.stripeProductId is string : true);
+    }
+
+    function validSubscriptionPlanCreate(data) {
+      return hasValidSubscriptionPlanCoreFields(data)
+        && hasValidSubscriptionPlanOptionals(data)
+        && data.createdAt == data.updatedAt;
+    }
+
+    function validSubscriptionPlanUpdate(oldData, newData) {
+      return hasValidSubscriptionPlanCoreFields(newData)
+        && hasValidSubscriptionPlanOptionals(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'minutes');
+    }
+
     allow write: if isAdmin();
     allow read: if isAdmin();
 
@@ -156,6 +264,41 @@ service cloud.firestore {
       allow update: if signedIn()
         && (isAdmin() || isOwner(resource.data.userId))
         && validDeskBookingUpdate(resource.data, request.resource.data);
+
+      allow delete: if isAdmin();
+    }
+
+    // Subscriptions collection
+    match /subscriptions/{subscriptionId} {
+      // Users can read their own subscriptions, admins can read all
+      allow read: if signedIn()
+        && (isOwner(resource.data.userId) || isAdmin());
+
+      // Users can create their own subscriptions, admins can create any
+      allow create: if signedIn()
+        && (isOwner(request.resource.data.userId) || isAdmin())
+        && validSubscriptionCreate(request.resource.data);
+
+      // Users can update their own subscriptions (limited fields), admins can update any
+      allow update: if signedIn()
+        && (isAdmin() || isOwner(resource.data.userId))
+        && validSubscriptionUpdate(resource.data, request.resource.data);
+
+      // Only admins can delete subscriptions
+      allow delete: if isAdmin();
+    }
+
+    // Subscription Plans collection
+    match /subscriptionPlans/{planId} {
+      // All authenticated users can read active plans
+      allow read: if signedIn();
+
+      // Only admins can create, update, or delete plans
+      allow create: if isAdmin()
+        && validSubscriptionPlanCreate(request.resource.data);
+
+      allow update: if isAdmin()
+        && validSubscriptionPlanUpdate(resource.data, request.resource.data);
 
       allow delete: if isAdmin();
     }
