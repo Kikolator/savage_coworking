@@ -253,7 +253,8 @@ class _DeskGrid extends ConsumerWidget {
                   desk: desk,
                   isSelected: selectedDeskId == desk.id,
                   availability: availability,
-                  onTap: availability == DeskAvailability.available
+                  onTap: (availability == DeskAvailability.available ||
+                          availability == DeskAvailability.soonAvailable)
                       ? () => onDeskSelected(desk.id)
                       : null,
                 );

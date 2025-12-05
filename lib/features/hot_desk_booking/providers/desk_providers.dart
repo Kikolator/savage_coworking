@@ -28,3 +28,10 @@ final allDesksProvider = StreamProvider.autoDispose
   return repository.watchDesks(workspaceId);
 });
 
+final deskProvider = FutureProvider.autoDispose.family<Desk?, String>(
+  (ref, deskId) async {
+    final repository = ref.watch(deskRepositoryProvider);
+    return repository.getDesk(deskId);
+  },
+);
+

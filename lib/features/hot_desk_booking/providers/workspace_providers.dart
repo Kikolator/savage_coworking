@@ -28,3 +28,10 @@ final activeWorkspacesFutureProvider =
   return service.fetchActiveWorkspaces();
 });
 
+final workspaceProvider = FutureProvider.autoDispose.family<Workspace?, String>(
+  (ref, workspaceId) async {
+    final repository = ref.watch(workspaceRepositoryProvider);
+    return repository.getWorkspace(workspaceId);
+  },
+);
+

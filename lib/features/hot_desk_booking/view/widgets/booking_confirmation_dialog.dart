@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/hot_desk_booking.dart';
+import '../../providers/desk_providers.dart';
+import '../../providers/workspace_providers.dart';
 
-class BookingConfirmationDialog extends StatelessWidget {
+class BookingConfirmationDialog extends ConsumerWidget {
   const BookingConfirmationDialog({
     super.key,
     required this.booking,
@@ -14,9 +17,11 @@ class BookingConfirmationDialog extends StatelessWidget {
   final VoidCallback? onAddToCalendar;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final formatter = DateFormat('EEE, MMM d, y • h:mm a');
+    final deskAsync = ref.watch(deskProvider(booking.deskId));
+    final workspaceAsync = ref.watch(workspaceProvider(booking.workspaceId));
 
     return AlertDialog(
       title: Row(
@@ -33,16 +38,42 @@ class BookingConfirmationDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _InfoRow(
-              label: 'Desk',
-              value: booking.deskId,
-              icon: Icons.chair_alt,
+            deskAsync.when(
+              data: (desk) => _InfoRow(
+                label: 'Desk',
+                value: desk?.name ?? booking.deskId,
+                icon: Icons.chair_alt,
+              ),
+              loading: () => _InfoRow(
+                label: 'Desk',
+                value: booking.deskId,
+                icon: Icons.chair_alt,
+              ),
+              error: (_, __) => _InfoRow(
+                label: 'Desk',
+                value: booking.deskId,
+                icon: Icons.chair_alt,
+              ),
             ),
             const SizedBox(height: 12),
-            _InfoRow(
-              label: 'Workspace',
-              value: booking.workspaceId,
-              icon: Icons.business,
+            workspaceAsync.when(
+              data: (workspace) => _InfoRow(
+                label: 'Workspace',
+                value: workspace != null
+                    ? '${workspace.name}\n${workspace.location}, ${workspace.country}'
+                    : booking.workspaceId,
+                icon: Icons.business,
+              ),
+              loading: () => _InfoRow(
+                label: 'Workspace',
+                value: booking.workspaceId,
+                icon: Icons.business,
+              ),
+              error: (_, __) => _InfoRow(
+                label: 'Workspace',
+                value: booking.workspaceId,
+                icon: Icons.business,
+              ),
             ),
             const SizedBox(height: 12),
             _InfoRow(
@@ -145,7 +176,11 @@ class _InfoRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(value, style: theme.textTheme.bodyMedium),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium,
+                maxLines: null,
+              ),
             ],
           ),
         ),
