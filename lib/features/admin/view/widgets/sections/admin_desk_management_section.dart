@@ -24,90 +24,46 @@ class _AdminDeskManagementSectionState
     final desksAsync = _showInactiveDesks
         ? ref.watch(allDesksProvider(workspaceId))
         : ref.watch(availableDesksProvider(workspaceId));
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth <= 480;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isMobile) ...[
-          // Mobile: Stack vertically
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Desk Management',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: () => _showCreateDeskDialog(context, ref),
-                icon: const Icon(Icons.add),
-                label: const Text('Add Desk'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Show inactive desks',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              Switch(
-                value: _showInactiveDesks,
-                onChanged: (value) {
-                  setState(() {
-                    _showInactiveDesks = value;
-                  });
-                },
-              ),
-            ],
-          ),
-        ] else ...[
-          // Desktop/Tablet: Horizontal layout
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
+        // Row 1: Title and Add Button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
                 'Desk Management',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Show inactive desks',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: _showInactiveDesks,
-                        onChanged: (value) {
-                          setState(() {
-                            _showInactiveDesks = value;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  FilledButton.icon(
-                    onPressed: () => _showCreateDeskDialog(context, ref),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Desk'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+            ),
+            FilledButton.icon(
+              onPressed: () => _showCreateDeskDialog(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Desk'),
+            ),
+          ],
+        ),
+        // Row 2: Inactive toggle
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Text(
+              'Show inactive desks',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(width: 8),
+            Switch(
+              value: _showInactiveDesks,
+              onChanged: (value) {
+                setState(() {
+                  _showInactiveDesks = value;
+                });
+              },
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
         workspaceId == null
             ? Center(
