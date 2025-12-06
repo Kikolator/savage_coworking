@@ -10,6 +10,8 @@ import 'package:savage_coworking/features/home/view/home_view.dart';
 import 'package:savage_coworking/features/hot_desk_booking/view/hot_desk_booking_view.dart';
 import 'package:savage_coworking/features/settings/view/settings_view.dart';
 import 'package:savage_coworking/features/splash/view/splash_view.dart';
+import 'package:savage_coworking/features/subscription/view/subscription_view.dart';
+import 'package:savage_coworking/features/billing/view/billing_view.dart';
 
 import 'app_route.dart';
 import 'go_router_refresh_stream.dart';
@@ -57,6 +59,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             name: AppRoute.settings.name,
             builder: (context, state) => const SettingsView(),
           ),
+          GoRoute(
+            path: AppRoute.subscriptions.path,
+            name: AppRoute.subscriptions.name,
+            builder: (context, state) => const SubscriptionView(),
+          ),
+          GoRoute(
+            path: AppRoute.billing.path,
+            name: AppRoute.billing.name,
+            builder: (context, state) => const BillingView(),
+          ),
         ],
       ),
       GoRoute(
@@ -79,7 +91,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isNavigatingToDashboard = location == AppRoute.home.path ||
           location == AppRoute.hotDesk.path ||
           location == AppRoute.bookings.path ||
-          location == AppRoute.settings.path;
+          location == AppRoute.settings.path ||
+          location == AppRoute.subscriptions.path ||
+          location == AppRoute.billing.path;
 
       // If on splash, let it handle navigation
       if (isNavigatingToSplash) {

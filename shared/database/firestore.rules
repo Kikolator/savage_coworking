@@ -84,7 +84,7 @@ service cloud.firestore {
     function validDeskBookingUpdate(oldData, newData) {
       return hasValidDeskBookingCoreFields(newData)
         && hasValidDeskBookingOptionals(newData)
-        && newData.updatedAt >= request.time - duration.value(1, 'minutes')
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
         && (isAdmin() || (immutableDeskBookingFields(oldData, newData) && validDeskBookingTransition(oldData.status, newData.status)));
     }
 
@@ -148,7 +148,7 @@ service cloud.firestore {
     function validSubscriptionUpdate(oldData, newData) {
       return hasValidSubscriptionCoreFields(newData)
         && hasValidSubscriptionOptionals(newData)
-        && newData.updatedAt >= request.time - duration.value(1, 'minutes')
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
         && immutableSubscriptionFields(oldData, newData)
         && (isAdmin() || validSubscriptionTransition(oldData.status, newData.status))
         && (newData.deskHours == 0 || newData.deskHoursUsed <= newData.deskHours)
@@ -191,13 +191,21 @@ service cloud.firestore {
     }
 
     function validSubscriptionPlanUpdate(oldData, newData) {
-      return hasValidSubscriptionPlanCoreFields(newData)
-        && hasValidSubscriptionPlanOptionals(newData)
-        && newData.updatedAt >= request.time - duration.value(1, 'minutes');
+      // For updates, we only validate fields that are present
+      // (partial updates don't include all fields)
+      return newData.updatedAt >= request.time - duration.value(1, 'm')
+        && (!('name' in newData) || (newData.name is string && newData.name.size() > 0 && newData.name.size() <= 100))
+        && (!('price' in newData) || (newData.price is int && newData.price > 0))
+        && (!('currency' in newData) || (newData.currency is string && newData.currency.size() == 3))
+        && (!('interval' in newData) || isValidSubscriptionInterval(newData.interval))
+        && (!('deskHours' in newData) || (newData.deskHours is number && newData.deskHours >= 0))
+        && (!('meetingRoomHours' in newData) || (newData.meetingRoomHours is number && newData.meetingRoomHours >= 0))
+        && (!('features' in newData) || newData.features is list)
+        && (!('isActive' in newData) || newData.isActive is bool)
+        && (!('stripePriceId' in newData) || newData.stripePriceId is string)
+        && (!('stripeProductId' in newData) || newData.stripeProductId is string)
+        && (!('createdAt' in newData) || newData.createdAt == oldData.createdAt); // createdAt must not change
     }
-
-    allow write: if isAdmin();
-    allow read: if isAdmin();
 
     // Users collection allows write/read by owner and admin
     match /users/{uid} {

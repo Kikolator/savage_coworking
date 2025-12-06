@@ -29,7 +29,6 @@ import {
   SubscriptionCreateDto,
   SubscriptionPlan,
   SubscriptionPlanCreateDto,
-  SubscriptionStatus,
 } from "../subscription.types";
 
 vi.mock("../subscription.repository", () => ({
@@ -170,45 +169,57 @@ describe("subscription.service", () => {
       );
     });
 
-    it("throws ActiveSubscriptionExistsError when user has active subscription", async () => {
-      repoMock.findPlanById.mockResolvedValue(fakePlan);
-      repoMock.findActiveSubscriptionByUserId.mockResolvedValue(
-        fakeSubscription,
-      );
+    it(
+      "throws ActiveSubscriptionExistsError when user has active subscription",
+      async () => {
+        repoMock.findPlanById.mockResolvedValue(fakePlan);
+        repoMock.findActiveSubscriptionByUserId.mockResolvedValue(
+          fakeSubscription,
+        );
 
-      await expect(createSubscription(createDto)).rejects.toThrow(
-        ActiveSubscriptionExistsError,
-      );
-    });
+        await expect(createSubscription(createDto)).rejects.toThrow(
+          ActiveSubscriptionExistsError,
+        );
+      },
+    );
 
-    it("throws error when monthly plan missing stripeSubscriptionId", async () => {
-      const dtoWithoutStripe = {...createDto, stripeSubscriptionId: undefined};
-      repoMock.findPlanById.mockResolvedValue(fakePlan);
-      repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
+    it(
+      "throws error when monthly plan missing stripeSubscriptionId",
+      async () => {
+        const dtoWithoutStripe = {
+          ...createDto,
+          stripeSubscriptionId: undefined,
+        };
+        repoMock.findPlanById.mockResolvedValue(fakePlan);
+        repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
 
-      await expect(createSubscription(dtoWithoutStripe)).rejects.toThrow(
-        "STRIPE_SUBSCRIPTION_ID_REQUIRED_FOR_RECURRING",
-      );
-    });
+        await expect(createSubscription(dtoWithoutStripe)).rejects.toThrow(
+          "STRIPE_SUBSCRIPTION_ID_REQUIRED_FOR_RECURRING",
+        );
+      },
+    );
 
-    it("throws error when one-off plan missing stripePaymentIntentId", async () => {
-      const oneOffPlan: SubscriptionPlan = {
-        ...fakePlan,
-        interval: "one_off",
-      };
-      const dtoWithoutPaymentIntent: SubscriptionCreateDto = {
-        ...createDto,
-        stripePaymentIntentId: undefined,
-        stripeSubscriptionId: undefined,
-      };
+    it(
+      "throws error when one-off plan missing stripePaymentIntentId",
+      async () => {
+        const oneOffPlan: SubscriptionPlan = {
+          ...fakePlan,
+          interval: "one_off",
+        };
+        const dtoWithoutPaymentIntent: SubscriptionCreateDto = {
+          ...createDto,
+          stripePaymentIntentId: undefined,
+          stripeSubscriptionId: undefined,
+        };
 
-      repoMock.findPlanById.mockResolvedValue(oneOffPlan);
-      repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
+        repoMock.findPlanById.mockResolvedValue(oneOffPlan);
+        repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
 
-      await expect(createSubscription(dtoWithoutPaymentIntent)).rejects.toThrow(
-        "STRIPE_PAYMENT_INTENT_ID_REQUIRED_FOR_ONE_OFF",
-      );
-    });
+        await expect(
+          createSubscription(dtoWithoutPaymentIntent),
+        ).rejects.toThrow("STRIPE_PAYMENT_INTENT_ID_REQUIRED_FOR_ONE_OFF");
+      },
+    );
   });
 
   describe("getSubscription", () => {
@@ -267,7 +278,10 @@ describe("subscription.service", () => {
 
   describe("updateSubscription", () => {
     it("updates subscription successfully", async () => {
-      const updatedSubscription = {...fakeSubscription, status: "cancelled"};
+      const updatedSubscription = {
+        ...fakeSubscription,
+        status: "cancelled" as const,
+      };
       repoMock.findSubscriptionById
         .mockResolvedValueOnce(fakeSubscription)
         .mockResolvedValueOnce(updatedSubscription);
@@ -281,27 +295,39 @@ describe("subscription.service", () => {
       expect(result).toEqual(updatedSubscription);
     });
 
-    it("throws SubscriptionNotFoundError when subscription not found", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(null);
+    it(
+      "throws SubscriptionNotFoundError when subscription not found",
+      async () => {
+        repoMock.findSubscriptionById.mockResolvedValue(null);
 
-      await expect(updateSubscription("sub-1", {status: "active"})).rejects
-        .toThrow(SubscriptionNotFoundError);
-    });
+        await expect(updateSubscription("sub-1", {status: "active"})).rejects
+          .toThrow(SubscriptionNotFoundError);
+      },
+    );
 
-    it("throws InvalidStatusTransitionError for invalid transition", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(fakeSubscription);
-      // Don't mock updateSubscription since it should throw before calling it
-      // active -> trial is invalid (trial can only go to active or cancelled)
+    it(
+      "throws InvalidStatusTransitionError for invalid transition",
+      async () => {
+        repoMock.findSubscriptionById.mockResolvedValue(fakeSubscription);
+        // Don't mock updateSubscription since it should throw before calling it
+        // active -> trial is invalid (trial can only go to active or cancelled)
 
-      await expect(
-        updateSubscription("sub-1", {status: "trial"}),
-      ).rejects.toThrow(InvalidStatusTransitionError);
-      expect(repoMock.updateSubscription).not.toHaveBeenCalled();
-    });
+        await expect(
+          updateSubscription("sub-1", {status: "trial"}),
+        ).rejects.toThrow(InvalidStatusTransitionError);
+        expect(repoMock.updateSubscription).not.toHaveBeenCalled();
+      },
+    );
 
     it("allows valid status transition", async () => {
-      const trialSubscription = {...fakeSubscription, status: "trial"};
-      const activeSubscription = {...fakeSubscription, status: "active"};
+      const trialSubscription = {
+        ...fakeSubscription,
+        status: "trial" as const,
+      };
+      const activeSubscription = {
+        ...fakeSubscription,
+        status: "active" as const,
+      };
       repoMock.findSubscriptionById
         .mockResolvedValueOnce(trialSubscription)
         .mockResolvedValueOnce(activeSubscription);
@@ -355,7 +381,7 @@ describe("subscription.service", () => {
     it("cancels immediately when requested", async () => {
       const cancelled = {
         ...fakeSubscription,
-        status: "cancelled",
+        status: "cancelled" as const,
         cancelAtPeriodEnd: false,
       };
       repoMock.findSubscriptionById
@@ -372,18 +398,25 @@ describe("subscription.service", () => {
       expect(result.status).toBe("cancelled");
     });
 
-    it("throws SubscriptionNotFoundError when subscription not found", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(null);
+    it(
+      "throws SubscriptionNotFoundError when subscription not found",
+      async () => {
+        repoMock.findSubscriptionById.mockResolvedValue(null);
 
-      await expect(cancelSubscription("sub-1", false)).rejects.toThrow(
-        SubscriptionNotFoundError,
-      );
-    });
+        await expect(cancelSubscription("sub-1", false)).rejects.toThrow(
+          SubscriptionNotFoundError,
+        );
+      },
+    );
   });
 
   describe("updateSubscriptionHours", () => {
     it("updates hours successfully within limits", async () => {
-      const updated = {...fakeSubscription, deskHoursUsed: 20, meetingRoomHoursUsed: 5};
+      const updated = {
+        ...fakeSubscription,
+        deskHoursUsed: 20,
+        meetingRoomHoursUsed: 5,
+      };
       repoMock.findSubscriptionById
         .mockResolvedValueOnce(fakeSubscription)
         .mockResolvedValueOnce(updated);
@@ -415,13 +448,15 @@ describe("subscription.service", () => {
       ).rejects.toThrow(HoursExceededError);
     });
 
-    it("throws SubscriptionNotFoundError when subscription not found", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(null);
+    it(
+      "throws SubscriptionNotFoundError when subscription not found",
+      async () => {
+        repoMock.findSubscriptionById.mockResolvedValue(null);
 
-      await expect(updateSubscriptionHours("sub-1", 20, 5)).rejects.toThrow(
-        SubscriptionNotFoundError,
-      );
-    });
+        await expect(updateSubscriptionHours("sub-1", 20, 5)).rejects
+          .toThrow(SubscriptionNotFoundError);
+      },
+    );
   });
 
   describe("deleteSubscription", () => {
@@ -435,13 +470,16 @@ describe("subscription.service", () => {
       expect(repoMock.deleteSubscription).toHaveBeenCalledWith("sub-1");
     });
 
-    it("throws SubscriptionNotFoundError when subscription not found", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(null);
+    it(
+      "throws SubscriptionNotFoundError when subscription not found",
+      async () => {
+        repoMock.findSubscriptionById.mockResolvedValue(null);
 
-      await expect(deleteSubscription("sub-1")).rejects.toThrow(
-        SubscriptionNotFoundError,
-      );
-    });
+        await expect(deleteSubscription("sub-1")).rejects.toThrow(
+          SubscriptionNotFoundError,
+        );
+      },
+    );
   });
 
   describe("createPlan", () => {

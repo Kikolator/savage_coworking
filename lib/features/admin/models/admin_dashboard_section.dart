@@ -4,7 +4,8 @@ enum AdminDashboardSection {
   meetingRooms('Meeting Rooms'),
   finance('Finance'),
   members('Members'),
-  analytics('Analytics');
+  analytics('Analytics'),
+  subscriptions('Subscriptions');
 
   const AdminDashboardSection(this.label);
 

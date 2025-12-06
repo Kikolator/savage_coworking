@@ -73,6 +73,25 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 },
               ),
             ],
+            const Divider(),
+            _buildMenuItem(
+              context,
+              icon: Icons.subscriptions,
+              title: 'Subscriptions',
+              onTap: () {
+                Navigator.pop(context);
+                context.go(AppRoute.subscriptions.path);
+              },
+            ),
+            _buildMenuItem(
+              context,
+              icon: Icons.receipt_long,
+              title: 'Billing & Invoices',
+              onTap: () {
+                Navigator.pop(context);
+                context.go(AppRoute.billing.path);
+              },
+            ),
             const Spacer(),
             const Divider(),
             _buildMenuItem(
@@ -144,6 +163,25 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 },
               ),
             ],
+            const Divider(),
+            _buildCupertinoMenuItem(
+              context,
+              icon: CupertinoIcons.creditcard,
+              title: 'Subscriptions',
+              onTap: () {
+                Navigator.pop(context);
+                context.go(AppRoute.subscriptions.path);
+              },
+            ),
+            _buildCupertinoMenuItem(
+              context,
+              icon: CupertinoIcons.doc_text,
+              title: 'Billing & Invoices',
+              onTap: () {
+                Navigator.pop(context);
+                context.go(AppRoute.billing.path);
+              },
+            ),
             const Spacer(),
             const Divider(),
             _buildCupertinoMenuItem(

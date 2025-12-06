@@ -8,6 +8,7 @@ import 'sections/admin_finance_section.dart';
 import 'sections/admin_meeting_rooms_section.dart';
 import 'sections/admin_members_section.dart';
 import 'sections/admin_overview_section.dart';
+import 'sections/admin_subscriptions_section.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({
@@ -183,6 +184,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return AdminAnalyticsSection(
           details: data.detailsFor(AdminDashboardSection.analytics),
         );
+      case AdminDashboardSection.subscriptions:
+        return const AdminSubscriptionsSection();
     }
   }
 
@@ -200,6 +203,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         return Icons.group_outlined;
       case AdminDashboardSection.analytics:
         return Icons.show_chart_outlined;
+      case AdminDashboardSection.subscriptions:
+        return Icons.subscriptions;
     }
   }
 }
