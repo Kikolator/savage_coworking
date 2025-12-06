@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
 
 /// Connects Firebase services to emulators when running in debug mode.
@@ -53,6 +54,16 @@ void connectFirebaseEmulators() {
 
     // Connect Storage emulator (port 9198 from firebase.json)
     FirebaseStorage.instance.useStorageEmulator(host, 9198);
+
+    // Connect Functions emulator (port 5005 from firebase.json)
+    // Note: This is also handled by FirebaseFunctionsService, but we can
+    // set it here for consistency
+    try {
+      final functions = FirebaseFunctions.instance;
+      functions.useFunctionsEmulator(host, 5005);
+    } catch (e) {
+      debugPrint('Failed to connect to Functions emulator: $e');
+    }
   } catch (e) {
     // Gracefully handle errors if emulators aren't running
     // This prevents crashes when emulators are not available

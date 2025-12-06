@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "savage-coworking"
+    "default": "savage-coworking",
+    "dev": "savage-coworking-dev",
+    "prod": "savage-coworking"
   }
 }

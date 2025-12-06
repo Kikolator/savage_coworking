@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../auth/models/auth_user.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -30,6 +31,33 @@ class SubscriptionView extends ConsumerWidget {
     final state = ref.watch(subscriptionViewModelProvider(userId));
     final viewModel =
         ref.read(subscriptionViewModelProvider(userId).notifier);
+
+    // Handle checkout return query parameters
+    final uri = GoRouterState.of(context).uri;
+    final checkoutStatus = uri.queryParameters['checkout'];
+    if (checkoutStatus != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final messenger = ScaffoldMessenger.of(context);
+        if (checkoutStatus == 'success') {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Payment successful! Your subscription is being activated.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Refresh subscription data
+          viewModel.refresh();
+        } else if (checkoutStatus == 'cancelled') {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Payment was cancelled.'),
+            ),
+          );
+        }
+        // Clear query parameters
+        context.go(uri.path);
+      });
+    }
 
     ref.listen<SubscriptionFailure?>(
       subscriptionViewModelProvider(userId).select((state) => state.failure),
@@ -85,6 +113,8 @@ class SubscriptionView extends ConsumerWidget {
     WidgetRef ref,
     String userId,
   ) async {
+    final authState = ref.read(authViewModelProvider);
+    if (authState.user == null) return;
     if (kDebugMode) {
       debugPrint('SubscriptionView: Opening choose plan dialog for user $userId');
     }
@@ -117,7 +147,8 @@ class SubscriptionView extends ConsumerWidget {
 
     final viewModel =
         ref.read(subscriptionViewModelProvider(userId).notifier);
-    await viewModel.selectPlan(selectedPlan);
+    final userEmail = authState.user!.email;
+    await viewModel.selectPlan(selectedPlan, userEmail: userEmail);
   }
 
   String _failureMessage(SubscriptionFailure failure) {

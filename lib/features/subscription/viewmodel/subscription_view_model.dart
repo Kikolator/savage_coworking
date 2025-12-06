@@ -90,7 +90,10 @@ class SubscriptionViewModel extends StateNotifier<SubscriptionState> {
     _loadData();
   }
 
-  Future<void> selectPlan(SubscriptionPlan plan) async {
+  Future<void> selectPlan(
+    SubscriptionPlan plan, {
+    required String userEmail,
+  }) async {
     if (kDebugMode) {
       debugPrint(
         'SubscriptionViewModel: selectPlan called for plan '
@@ -103,6 +106,7 @@ class SubscriptionViewModel extends StateNotifier<SubscriptionState> {
     final (subscription, failure) = await _service.createSubscription(
       userId: _userId,
       plan: plan,
+      userEmail: userEmail,
     );
 
     if (failure != null) {
@@ -119,12 +123,13 @@ class SubscriptionViewModel extends StateNotifier<SubscriptionState> {
     if (kDebugMode) {
       debugPrint(
         'SubscriptionViewModel: selectPlan succeeded, '
-        'subscription created: ${subscription?.id}',
+        'checkout session created. Waiting for payment completion...',
       );
     }
 
-    // Reload subscription data after creation
-    await _loadData();
+    // Don't reload immediately - subscription will be created via webhook
+    // Show a message that payment is in progress
+    state = state.copyWith(isLoading: false);
   }
 }
 

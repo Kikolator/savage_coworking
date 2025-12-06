@@ -1,14 +1,17 @@
 import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/services/firebase_functions_service.dart';
 import '../models/subscription.dart';
 import '../models/subscription_failure.dart';
 import '../models/subscription_plan.dart';
 import '../repository/subscription_repository.dart';
 
 class SubscriptionService {
-  SubscriptionService(this._repository);
+  SubscriptionService(this._repository, this._functionsService);
 
   final SubscriptionRepository _repository;
+  final FirebaseFunctionsService _functionsService;
 
   Stream<Subscription?> watchActiveSubscription(String userId) {
     return _repository.watchActiveSubscription(userId);
@@ -25,7 +28,8 @@ class SubscriptionService {
     }
   }
 
-  Future<(List<SubscriptionPlan>?, SubscriptionFailure?)> getActivePlans() async {
+  Future<(List<SubscriptionPlan>?, SubscriptionFailure?)>
+  getActivePlans() async {
     try {
       final plans = await _repository.getActivePlans();
       return (plans, null);
@@ -57,10 +61,7 @@ class SubscriptionService {
         subscriptionId,
         cancelAtPeriodEnd
             ? {'cancelAtPeriodEnd': true}
-            : {
-                'status': 'cancelled',
-                'cancelAtPeriodEnd': false,
-              },
+            : {'status': 'cancelled', 'cancelAtPeriodEnd': false},
       );
       return null;
     } catch (e) {
@@ -71,6 +72,7 @@ class SubscriptionService {
   Future<(Subscription?, SubscriptionFailure?)> createSubscription({
     required String userId,
     required SubscriptionPlan plan,
+    required String userEmail,
   }) async {
     if (kDebugMode) {
       debugPrint(
@@ -80,15 +82,6 @@ class SubscriptionService {
     }
 
     try {
-      // TODO: Integrate with Stripe checkout flow
-      // For now, return a validation error indicating Stripe integration needed
-      if (kDebugMode) {
-        debugPrint(
-          'SubscriptionService: Stripe integration not yet implemented. '
-          'Plan selection logged but subscription creation deferred.',
-        );
-      }
-
       // Check if user already has an active subscription
       final existingSubscription = await _repository.getActiveSubscription(
         userId,
@@ -109,27 +102,84 @@ class SubscriptionService {
         );
       }
 
-      // For now, return a validation error indicating Stripe is needed
-      // Once Stripe is integrated, this will:
-      // 1. Create Stripe checkout session
-      // 2. Redirect user to Stripe payment page
-      // 3. Handle webhook callback to create subscription in Firestore
-      return (
-        null,
-        const SubscriptionFailure.validation(
-          'Stripe checkout integration is not yet available. '
-          'Please contact support to complete your subscription.',
-        ),
+      // Create checkout session
+      final checkoutUrl = await createCheckoutSession(
+        userId: userId,
+        planId: plan.id,
+        customerEmail: userEmail,
       );
+
+      if (checkoutUrl == null) {
+        return (
+          null,
+          const SubscriptionFailure.unexpected(
+            'Failed to create checkout session. Please try again.',
+          ),
+        );
+      }
+
+      // Open Stripe checkout URL
+      final uri = Uri.parse(checkoutUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // Return success - subscription will be created via webhook
+        // The UI should show a message that payment is in progress
+        return (null, null);
+      } else {
+        return (
+          null,
+          const SubscriptionFailure.unexpected(
+            'Unable to open checkout page. Please check your browser settings.',
+          ),
+        );
+      }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint(
-          'SubscriptionService: createSubscription error - $e',
-        );
+        debugPrint('SubscriptionService: createSubscription error - $e');
       }
       return (null, SubscriptionFailure.unexpected(e.toString()));
     }
   }
+
+  /// Creates a Stripe checkout session and returns the checkout URL.
+  Future<String?> createCheckoutSession({
+    required String userId,
+    required String planId,
+    required String customerEmail,
+  }) async {
+    try {
+      // Determine base URL for redirects
+      // For web, use current origin; for mobile, use a deep link scheme
+      String baseUrl;
+      if (kIsWeb) {
+        baseUrl = Uri.base.origin;
+      } else {
+        // For mobile apps, use a custom URL scheme or your app's domain
+        // You may want to make this configurable
+        baseUrl = 'https://your-app.com';
+      }
+
+      // Call Firebase callable function
+      final result = await _functionsService.callFunctionWithMap(
+        functionName: 'createCheckoutSession',
+        data: {
+          'userId': userId,
+          'planId': planId,
+          'customerEmail': customerEmail,
+          'baseUrl': baseUrl,
+        },
+      );
+
+      final checkoutUrl = result['checkoutUrl'] as String?;
+      if (checkoutUrl != null) {
+        return checkoutUrl;
+      }
+      throw Exception('Invalid response format: missing checkoutUrl');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('SubscriptionService: createCheckoutSession error - $e');
+      }
+      return null;
+    }
+  }
 }
-
-
