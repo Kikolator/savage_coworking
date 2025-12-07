@@ -20,7 +20,7 @@ async function getOrCreateCustomer(
   email: string,
 ): Promise<string> {
   const stripe = new Stripe(getEnvConfig().stripe.secretKey, {
-    apiVersion: "2025-02-24.acacia",
+    apiVersion: "2025-11-17.clover" as Stripe.LatestApiVersion,
   });
 
   // Check if customer exists in Firestore
@@ -65,7 +65,7 @@ export async function createCheckoutSession(
   params: CheckoutSessionParams,
 ): Promise<CheckoutSessionResponse> {
   const stripe = new Stripe(getEnvConfig().stripe.secretKey, {
-    apiVersion: "2025-02-24.acacia",
+    apiVersion: "2025-11-17.clover" as Stripe.LatestApiVersion,
   });
 
   // Get or create Stripe customer

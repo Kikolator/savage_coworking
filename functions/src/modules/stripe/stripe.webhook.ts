@@ -63,7 +63,59 @@ async function handleCheckoutSessionCompleted(
     throw new Error("Missing customer ID in checkout session");
   }
 
-  const {start, end} = calculatePeriodDates(plan.interval);
+  // Initialize Stripe to fetch subscription details if needed
+  const stripe = new Stripe(getEnvConfig().stripe.secretKey, {
+    apiVersion: "2025-11-17.clover" as Stripe.LatestApiVersion,
+  });
+
+  let start: Timestamp;
+  let end: Timestamp;
+
+  // For subscriptions, fetch actual period dates from Stripe
+  if (session.mode === "subscription" && session.subscription) {
+    const subscriptionId =
+      typeof session.subscription === "string"
+        ? session.subscription
+        : session.subscription.id;
+
+    try {
+      // Fetch subscription to get accurate period dates
+      const stripeSubscription = await stripe.subscriptions.retrieve(
+        subscriptionId,
+      );
+
+      if (
+        stripeSubscription.current_period_start &&
+        stripeSubscription.current_period_end
+      ) {
+        start = Timestamp.fromMillis(
+          stripeSubscription.current_period_start * 1000,
+        );
+        end = Timestamp.fromMillis(
+          stripeSubscription.current_period_end * 1000,
+        );
+      } else {
+        // Fallback to calculated dates if not available
+        const calculated = calculatePeriodDates(plan.interval);
+        start = calculated.start;
+        end = calculated.end;
+      }
+    } catch (error) {
+      console.error(
+        `Failed to fetch subscription ${subscriptionId}, using calculated dates:`,
+        error,
+      );
+      // Fallback to calculated dates on error
+      const calculated = calculatePeriodDates(plan.interval);
+      start = calculated.start;
+      end = calculated.end;
+    }
+  } else {
+    // For one-off payments, use calculated dates
+    const calculated = calculatePeriodDates(plan.interval);
+    start = calculated.start;
+    end = calculated.end;
+  }
 
   // Build subscription DTO
   const subscriptionDto: Parameters<
@@ -92,7 +144,20 @@ async function handleCheckoutSessionCompleted(
   }
 
   // Create subscription (service will validate and check for existing)
-  await subscriptionService.createSubscription(subscriptionDto);
+  // Status will be automatically set to "active" since payment was successful
+  // (indicated by presence of stripeSubscriptionId or stripePaymentIntentId)
+  try {
+    await subscriptionService.createSubscription(subscriptionDto);
+    console.log(
+      `Successfully created subscription for user ${userId}, plan ${planId}`,
+    );
+  } catch (error) {
+    console.error(
+      `Failed to create subscription for user ${userId}, plan ${planId}:`,
+      error,
+    );
+    throw error;
+  }
 }
 
 /**
@@ -115,14 +180,27 @@ async function handleSubscriptionUpdated(
   const updates: Parameters<typeof subscriptionRepo.updateSubscription>[1] = {};
 
   // Update status based on Stripe subscription status
+  // Map all possible Stripe subscription statuses to our internal statuses
   if (subscription.status === "active") {
     updates.status = "active";
+  } else if (subscription.status === "trialing") {
+    updates.status = "trial";
   } else if (subscription.status === "past_due") {
     updates.status = "past_due";
   } else if (subscription.status === "canceled") {
     updates.status = "cancelled";
   } else if (subscription.status === "unpaid") {
     updates.status = "expired";
+  } else if (
+    subscription.status === "incomplete" ||
+    subscription.status === "incomplete_expired"
+  ) {
+    // Incomplete payments are treated as past_due
+    updates.status = "past_due";
+  } else if (subscription.status === "paused") {
+    // Paused subscriptions remain active but paused
+    // We'll keep them as active for now, but could add a "paused" status later
+    updates.status = "active";
   }
 
   // Update period dates
@@ -169,29 +247,41 @@ async function handleSubscriptionDeleted(
  * Processes a Stripe webhook event.
  * @param {Stripe.Event} event - Stripe webhook event.
  * @return {Promise<void>} Resolves when processed.
+ * @throws {Error} If event processing fails.
  */
 export async function processWebhookEvent(
   event: Stripe.Event,
 ): Promise<void> {
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      await handleCheckoutSessionCompleted(session);
-      break;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await handleCheckoutSessionCompleted(session);
+        break;
+      }
+      case "customer.subscription.updated": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionUpdated(subscription);
+        break;
+      }
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await handleSubscriptionDeleted(subscription);
+        break;
+      }
+      default:
+        // Log unhandled event types for monitoring
+        console.log(`Unhandled webhook event type: ${event.type}`);
+        break;
     }
-    case "customer.subscription.updated": {
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionUpdated(subscription);
-      break;
-    }
-    case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionDeleted(subscription);
-      break;
-    }
-    default:
-      // Ignore other event types
-      break;
+  } catch (error) {
+    // Log error with event context for debugging
+    console.error(
+      `Error processing webhook event ${event.type} (id: ${event.id}):`,
+      error,
+    );
+    // Re-throw to ensure webhook returns error status
+    throw error;
   }
 }
 
@@ -207,7 +297,7 @@ export function verifyWebhookSignature(
   signature: string,
 ): Stripe.Event {
   const stripe = new Stripe(getEnvConfig().stripe.secretKey, {
-    apiVersion: "2025-02-24.acacia",
+    apiVersion: "2025-11-17.clover" as Stripe.LatestApiVersion,
   });
 
   try {
