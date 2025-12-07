@@ -160,10 +160,10 @@ class SubscriptionService {
       }
 
       // Call Firebase callable function
+      // Note: userId is automatically provided via Firebase Auth token
       final result = await _functionsService.callFunctionWithMap(
         functionName: 'createCheckoutSession',
         data: {
-          'userId': userId,
           'planId': planId,
           'customerEmail': customerEmail,
           'baseUrl': baseUrl,
