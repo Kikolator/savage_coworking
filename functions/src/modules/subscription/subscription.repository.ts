@@ -92,11 +92,18 @@ export async function createSubscription(
   plan: SubscriptionPlan,
 ): Promise<Subscription> {
   const now = Timestamp.now();
+  
+  // Determine initial status:
+  // - If it has a Stripe subscription ID (from webhook), it's active (payment succeeded)
+  // - Otherwise, it's a trial (manual creation or test)
+  const initialStatus: "active" | "trial" =
+    dto.stripeSubscriptionId || dto.stripePaymentIntentId ? "active" : "trial";
+  
   const subscription: Omit<Subscription, "id"> = {
     userId: dto.userId,
     planId: dto.planId,
     planName: plan.name,
-    status: "trial",
+    status: initialStatus,
     stripeCustomerId: dto.stripeCustomerId,
     renewsAutomatically: plan.interval === "month",
     currentPeriodStart: dto.currentPeriodStart,
