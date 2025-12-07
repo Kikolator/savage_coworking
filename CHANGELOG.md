@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Subscription status is now automatically set to "active" when created from successful Stripe payments (via webhook), eliminating the need for manual status updates.
 - User document creation in Firestore after successful signup, with User model and UserRepository following the shared schema.
 - Shared `deskBookings` schema coverage, Flutter MVVM feature, and Firestore rules that enable members to create, manage, and validate hot desk reservations.
 - go_router navigation with a startup splash experience that routes members to authentication or desk booking based on their sign-in state.
@@ -50,6 +51,10 @@ All notable changes to this project will be documented in this file.
 - Centralized navigation logic in NavigationService for consistent routing decisions based on authentication and admin status.
 - Removed redundant SplashDestination enum, now using AppRoute directly throughout the splash flow.
 - Admin users are now routed to admin dashboard on app startup.
+- Updated Stripe API version to 2025-11-17.clover for improved compatibility and features.
+- Enhanced Stripe webhook processing to fetch actual subscription period dates from Stripe instead of calculating them locally.
+- Improved subscription status mapping to handle all Stripe subscription statuses (trialing, incomplete, paused, etc.).
+- Enhanced webhook error handling with better logging, context, and appropriate HTTP status codes.
 
 ### Fixed
 - Fixed TypeScript build output path in Firebase Functions, ensuring compiled files are correctly placed in `lib/` directory for emulator and deployment.
