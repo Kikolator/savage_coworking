@@ -142,10 +142,26 @@ webhookRouter.post("/webhook", async (req: Request, res: Response) => {
 
     res.json({received: true});
   } catch (err: unknown) {
-    console.error("Webhook error:", err);
-    const error = err as {message?: string};
-    res.status(400).json({
+    // Enhanced error logging with event context
+    const error = err as {message?: string; code?: string};
+    console.error("Webhook processing error:", {
+      message: error.message,
+      code: error.code,
+      error: err,
+    });
+    
+    // Return appropriate status code
+    // 400 for client errors (bad request, validation), 500 for server errors
+    const statusCode = error.code === "ACTIVE_SUBSCRIPTION_EXISTS" ||
+      error.code === "PLAN_NOT_FOUND" ||
+      error.message?.includes("Missing") ||
+      error.message?.includes("not found")
+      ? 400
+      : 500;
+    
+    res.status(statusCode).json({
       message: error.message || "Webhook processing failed",
+      received: false,
     });
   }
 });
