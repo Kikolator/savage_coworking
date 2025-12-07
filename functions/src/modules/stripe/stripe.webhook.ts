@@ -82,7 +82,7 @@ async function handleCheckoutSessionCompleted(
       // Fetch subscription to get accurate period dates
       const stripeSubscription = await stripe.subscriptions.retrieve(
         subscriptionId,
-      );
+      ) as any;
 
       if (
         stripeSubscription.current_period_start &&
@@ -204,12 +204,13 @@ async function handleSubscriptionUpdated(
   }
 
   // Update period dates
-  if (subscription.current_period_start && subscription.current_period_end) {
+  const sub = subscription as any;
+  if (sub.current_period_start && sub.current_period_end) {
     updates.currentPeriodStart = Timestamp.fromMillis(
-      subscription.current_period_start * 1000,
+      sub.current_period_start * 1000,
     );
     updates.currentPeriodEnd = Timestamp.fromMillis(
-      subscription.current_period_end * 1000,
+      sub.current_period_end * 1000,
     );
   }
 

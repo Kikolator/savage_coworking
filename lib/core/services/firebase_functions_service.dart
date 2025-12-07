@@ -1,6 +1,5 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 /// Core service for calling Firebase Cloud Functions.
 ///
@@ -112,4 +111,3 @@ class FirebaseFunctionsService {
     return result;
   }
 }
-
