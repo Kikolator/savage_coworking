@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../providers/admin_subscription_providers.dart';
-import '../../../../viewmodel/admin_subscription_view_model.dart';
 import '../../../../models/admin_subscription_models.dart';
 import '../../../../../subscription/models/subscription_interval.dart';
 
@@ -21,8 +20,6 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
   late final TextEditingController _deskHoursController;
   late final TextEditingController _meetingRoomHoursController;
   late final TextEditingController _featuresController;
-  late final TextEditingController _stripePriceIdController;
-  late final TextEditingController _stripeProductIdController;
 
   SubscriptionInterval _interval = SubscriptionInterval.month;
   String _currency = 'usd';
@@ -49,12 +46,6 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
     _featuresController = TextEditingController(
       text: plan?.features.join('\n') ?? '',
     );
-    _stripePriceIdController = TextEditingController(
-      text: plan?.stripePriceId ?? '',
-    );
-    _stripeProductIdController = TextEditingController(
-      text: plan?.stripeProductId ?? '',
-    );
 
     if (plan != null) {
       _interval = plan.interval;
@@ -70,8 +61,6 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
     _deskHoursController.dispose();
     _meetingRoomHoursController.dispose();
     _featuresController.dispose();
-    _stripePriceIdController.dispose();
-    _stripeProductIdController.dispose();
     super.dispose();
   }
 
@@ -100,12 +89,6 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
       meetingRoomHours: meetingRoomHours,
       features: features,
       isActive: _isActive,
-      stripePriceId: _stripePriceIdController.text.trim().isEmpty
-          ? null
-          : _stripePriceIdController.text.trim(),
-      stripeProductId: _stripeProductIdController.text.trim().isEmpty
-          ? null
-          : _stripeProductIdController.text.trim(),
     );
 
     if (_isEditing && state.selectedPlan != null) {
@@ -301,34 +284,6 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                           helperText: 'One feature per line',
                         ),
                         maxLines: 5,
-                      ),
-                      const SizedBox(height: 16),
-                      if (_interval == SubscriptionInterval.month) ...[
-                        TextFormField(
-                          controller: _stripePriceIdController,
-                          decoration: const InputDecoration(
-                            labelText: 'Stripe Price ID *',
-                            hintText: 'price_...',
-                            helperText: 'Required for recurring plans',
-                          ),
-                          validator: _interval == SubscriptionInterval.month
-                              ? (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Stripe Price ID is required for recurring plans';
-                                  }
-                                  return null;
-                                }
-                              : null,
-                        ),
-                        const SizedBox(height: 16),
-                      ],
-                      TextFormField(
-                        controller: _stripeProductIdController,
-                        decoration: const InputDecoration(
-                          labelText: 'Stripe Product ID',
-                          hintText: 'prod_...',
-                          helperText: 'Optional',
-                        ),
                       ),
                       const SizedBox(height: 16),
                       SwitchListTile(

@@ -6,7 +6,12 @@ import {
   verifyWebhookSignature,
 } from "../stripe/stripe.webhook";
 import * as subscriptionRepo from "./subscription.repository";
+import * as subscriptionService from "./subscription.service";
 import {CheckoutSessionParams} from "../stripe/stripe.types";
+import {
+  SubscriptionPlanCreateDto,
+  SubscriptionPlanUpdateDto,
+} from "./subscription.types";
 import {
   stripeSecretKey,
   stripeWebhookSecret,
@@ -180,6 +185,117 @@ export const createCheckoutSession = onCall(
     const result = await stripeService.createCheckoutSession(params);
 
     return result;
+  },
+);
+
+/**
+ * Callable function for creating a subscription plan (admin only).
+ * Auto-creates Stripe product and price if not provided.
+ */
+export const createPlan = onCall(
+  {
+    region: "us-central1",
+    secrets: [stripeSecretKey],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    // Check admin role
+    const isAdmin = request.auth.token.admin === true;
+    if (!isAdmin) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can create plans.",
+      );
+    }
+
+    const dto = request.data as SubscriptionPlanCreateDto;
+    const plan = await subscriptionService.createPlan(dto);
+    return plan;
+  },
+);
+
+/**
+ * Callable function for updating a subscription plan (admin only).
+ * Handles Stripe resource updates (new prices, product name changes).
+ */
+export const updatePlan = onCall(
+  {
+    region: "us-central1",
+    secrets: [stripeSecretKey],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const isAdmin = request.auth.token.admin === true;
+    if (!isAdmin) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can update plans.",
+      );
+    }
+
+    const {planId, ...dto} = request.data as {
+      planId: string;
+    } & SubscriptionPlanUpdateDto;
+
+    if (!planId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "planId is required",
+      );
+    }
+
+    const plan = await subscriptionService.updatePlan(planId, dto);
+    return plan;
+  },
+);
+
+/**
+ * Callable function for deleting a subscription plan (admin only).
+ * Checks for active subscriptions and archives Stripe product.
+ */
+export const deletePlan = onCall(
+  {
+    region: "us-central1",
+    secrets: [stripeSecretKey],
+  },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated.",
+      );
+    }
+
+    const isAdmin = request.auth.token.admin === true;
+    if (!isAdmin) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only admins can delete plans.",
+      );
+    }
+
+    const {planId} = request.data as {planId: string};
+    if (!planId) {
+      throw new HttpsError(
+        "invalid-argument",
+        "planId is required",
+      );
+    }
+
+    await subscriptionService.deletePlan(planId);
+    return {success: true};
   },
 );
 

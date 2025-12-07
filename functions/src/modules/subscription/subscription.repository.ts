@@ -261,6 +261,24 @@ export async function updatePlan(
 }
 
 /**
+ * Finds all active subscriptions for a plan.
+ * @param {string} planId - Plan ID.
+ * @return {Promise<Subscription[]>} Array of active subscriptions.
+ */
+export async function findSubscriptionsByPlanId(
+  planId: string,
+): Promise<Subscription[]> {
+  const snap = await subscriptionsCol()
+    .where("planId", "==", planId)
+    .where("status", "==", "active")
+    .get();
+  return snap.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as Omit<Subscription, "id">),
+  }));
+}
+
+/**
  * Deletes a subscription plan.
  * @param {string} id - Plan ID.
  * @return {Promise<void>} Resolves when deleted.

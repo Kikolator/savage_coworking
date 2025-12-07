@@ -180,11 +180,14 @@ service cloud.firestore {
     }
 
     function hasValidSubscriptionPlanOptionals(data) {
-      return (('stripePriceId' in data) ? data.stripePriceId is string : true)
-        && (('stripeProductId' in data) ? data.stripeProductId is string : true);
+      // Stripe IDs are optional on create - backend will auto-create them if not provided
+      // If present, they must be strings or null
+      return (('stripePriceId' in data) ? (data.stripePriceId is string || data.stripePriceId == null) : true)
+        && (('stripeProductId' in data) ? (data.stripeProductId is string || data.stripeProductId == null) : true);
     }
 
     function validSubscriptionPlanCreate(data) {
+      // Stripe IDs are optional - backend auto-creates them if missing
       return hasValidSubscriptionPlanCoreFields(data)
         && hasValidSubscriptionPlanOptionals(data)
         && data.createdAt == data.updatedAt;
@@ -193,6 +196,7 @@ service cloud.firestore {
     function validSubscriptionPlanUpdate(oldData, newData) {
       // For updates, we only validate fields that are present
       // (partial updates don't include all fields)
+      // Note: Stripe IDs may change when price/interval changes (backend creates new ones)
       return newData.updatedAt >= request.time - duration.value(1, 'm')
         && (!('name' in newData) || (newData.name is string && newData.name.size() > 0 && newData.name.size() <= 100))
         && (!('price' in newData) || (newData.price is int && newData.price > 0))
@@ -202,8 +206,8 @@ service cloud.firestore {
         && (!('meetingRoomHours' in newData) || (newData.meetingRoomHours is number && newData.meetingRoomHours >= 0))
         && (!('features' in newData) || newData.features is list)
         && (!('isActive' in newData) || newData.isActive is bool)
-        && (!('stripePriceId' in newData) || newData.stripePriceId is string)
-        && (!('stripeProductId' in newData) || newData.stripeProductId is string)
+        && (!('stripePriceId' in newData) || newData.stripePriceId is string || newData.stripePriceId == null)
+        && (!('stripeProductId' in newData) || newData.stripeProductId is string || newData.stripeProductId == null)
         && (!('createdAt' in newData) || newData.createdAt == oldData.createdAt); // createdAt must not change
     }
 

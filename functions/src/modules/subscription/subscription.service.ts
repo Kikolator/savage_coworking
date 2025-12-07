@@ -1,4 +1,5 @@
 import * as subscriptionRepo from "./subscription.repository";
+import * as stripeService from "../stripe/stripe.service";
 import {
   Subscription,
   SubscriptionCreateDto,
@@ -83,6 +84,20 @@ export class PlanNameTakenError extends Error {
   /** Creates a new PlanNameTakenError. */
   constructor() {
     super("PLAN_NAME_TAKEN");
+  }
+}
+
+/**
+ * Error thrown when Stripe operation fails.
+ */
+export class StripeOperationError extends Error {
+  /** HTTP status code for this error. */
+  statusCode = 502;
+  /**
+   * @param {string} message - Error message.
+   */
+  constructor(message: string) {
+    super(`STRIPE_OPERATION_FAILED: ${message}`);
   }
 }
 
@@ -326,16 +341,51 @@ export async function createPlan(
     throw new PlanNameTakenError();
   }
 
-  // Validate Stripe IDs based on interval
-  if (dto.interval === "month" && !dto.stripePriceId) {
-    throw new Error("STRIPE_PRICE_ID_REQUIRED_FOR_RECURRING");
+  // Auto-create Stripe resources if not provided
+  let stripeProductId = dto.stripeProductId;
+  let stripePriceId = dto.stripePriceId;
+
+  if (!stripeProductId || !stripePriceId) {
+    try {
+      const stripeResources = await stripeService.createStripeProductAndPrice({
+        name: dto.name,
+        price: dto.price,
+        currency: dto.currency,
+        interval: dto.interval,
+      });
+      stripeProductId = stripeResources.productId;
+      stripePriceId = stripeResources.priceId;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new StripeOperationError(
+        `Failed to create Stripe resources: ${errorMessage}`,
+      );
+    }
   }
 
-  if (dto.interval === "one_off" && !dto.stripeProductId) {
-    throw new Error("STRIPE_PRODUCT_ID_REQUIRED_FOR_ONE_OFF");
+  // Create plan with Stripe IDs
+  try {
+    return await subscriptionRepo.createPlan({
+      ...dto,
+      stripeProductId,
+      stripePriceId,
+    });
+  } catch (error) {
+    // Rollback: If plan creation fails and we created Stripe resources,
+    // archive them
+    if (!dto.stripeProductId && stripeProductId) {
+      try {
+        await stripeService.archiveStripeProduct(stripeProductId);
+      } catch (rollbackError) {
+        // Log but don't throw - original error is more important
+        console.error(
+          `Failed to archive Stripe product during rollback: ${rollbackError}`,
+        );
+      }
+    }
+    throw error;
   }
-
-  return subscriptionRepo.createPlan(dto);
 }
 
 /**
@@ -387,9 +437,119 @@ export async function updatePlan(
     if (nameExists) {
       throw new PlanNameTakenError();
     }
+
+    // Update Stripe product name if product exists
+    if (existing.stripeProductId) {
+      try {
+        await stripeService.updateStripeProduct(
+          existing.stripeProductId,
+          dto.name,
+        );
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        throw new StripeOperationError(
+          `Failed to update Stripe product: ${errorMessage}`,
+        );
+      }
+    }
   }
 
-  return subscriptionRepo.updatePlan(id, dto);
+  // Handle price change (prices are immutable, create new one)
+  const priceChanged = dto.price !== undefined && dto.price !== existing.price;
+  const currencyChanged =
+    dto.currency !== undefined && dto.currency !== existing.currency;
+  const intervalChanged =
+    dto.interval !== undefined && dto.interval !== existing.interval;
+
+  let newStripePriceId: string | undefined;
+  let newStripeProductId: string | undefined;
+
+  // If price or currency changed, create new price
+  if ((priceChanged || currencyChanged) && existing.stripeProductId) {
+    try {
+      const interval = dto.interval ?? existing.interval;
+      newStripePriceId = await stripeService.createStripePrice({
+        productId: existing.stripeProductId,
+        price: dto.price ?? existing.price,
+        currency: dto.currency ?? existing.currency,
+        interval,
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new StripeOperationError(
+        `Failed to create new Stripe price: ${errorMessage}`,
+      );
+    }
+  }
+
+  // If interval changed, need to create new product/price combination
+  if (intervalChanged && dto.interval) {
+    try {
+      const stripeResources = await stripeService.createStripeProductAndPrice({
+        name: dto.name ?? existing.name,
+        price: dto.price ?? existing.price,
+        currency: dto.currency ?? existing.currency,
+        interval: dto.interval,
+      });
+      newStripeProductId = stripeResources.productId;
+      newStripePriceId = stripeResources.priceId;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new StripeOperationError(
+        `Failed to create Stripe resources for interval change: ${errorMessage}`,
+      );
+    }
+  }
+
+  // If plan doesn't have Stripe IDs but price is being updated, create both
+  if (
+    !existing.stripeProductId &&
+    (priceChanged || currencyChanged || intervalChanged)
+  ) {
+    try {
+      const stripeResources = await stripeService.createStripeProductAndPrice({
+        name: dto.name ?? existing.name,
+        price: dto.price ?? existing.price,
+        currency: dto.currency ?? existing.currency,
+        interval: dto.interval ?? existing.interval,
+      });
+      newStripeProductId = stripeResources.productId;
+      newStripePriceId = stripeResources.priceId;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      throw new StripeOperationError(
+        `Failed to create Stripe resources: ${errorMessage}`,
+      );
+    }
+  }
+
+  // Build update DTO with new Stripe IDs if created
+  const updateDto: SubscriptionPlanUpdateDto = {...dto};
+  if (newStripePriceId) {
+    updateDto.stripePriceId = newStripePriceId;
+  }
+  if (newStripeProductId) {
+    updateDto.stripeProductId = newStripeProductId;
+  }
+
+  try {
+    return await subscriptionRepo.updatePlan(id, updateDto);
+  } catch (error) {
+    // If plan update fails after Stripe operations, log warning
+    // (Stripe resources created but not linked)
+    if (newStripePriceId || newStripeProductId) {
+      console.warn(
+        `Plan update failed after Stripe operations. ` +
+          `Stripe resources may need manual cleanup: ` +
+          `productId=${newStripeProductId}, priceId=${newStripePriceId}`,
+      );
+    }
+    throw error;
+  }
 }
 
 /**
@@ -403,9 +563,29 @@ export async function deletePlan(id: string): Promise<void> {
     throw new PlanNotFoundError();
   }
 
-  // Note: In a real implementation, you might want to check for active
-  // subscriptions using this plan before deletion
-  // For now, we'll skip this check or implement it later
+  // Check for active subscriptions using this plan
+  const activeSubscriptions =
+    await subscriptionRepo.findSubscriptionsByPlanId(id);
+  if (activeSubscriptions.length > 0) {
+    throw new Error(
+      `Cannot delete plan with ${activeSubscriptions.length} active subscription(s). Deactivate the plan instead.`,
+    );
+  }
+
+  // Archive Stripe product if it exists
+  if (existing.stripeProductId) {
+    try {
+      await stripeService.archiveStripeProduct(existing.stripeProductId);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      // Log warning but continue with deletion
+      // (Stripe product may already be archived or deleted)
+      console.warn(
+        `Failed to archive Stripe product ${existing.stripeProductId}: ${errorMessage}`,
+      );
+    }
+  }
 
   return subscriptionRepo.deletePlan(id);
 }

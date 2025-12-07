@@ -1,5 +1,7 @@
-import '../../subscription/models/subscription_plan.dart';
+import 'package:flutter/foundation.dart';
+
 import '../../subscription/models/subscription_interval.dart';
+import '../../subscription/models/subscription_plan.dart';
 import '../../subscription/models/subscription_status.dart';
 import '../models/admin_subscription_models.dart';
 import '../repository/admin_subscription_repository.dart';
@@ -46,13 +48,6 @@ class AdminSubscriptionService {
       return (null, 'Meeting room hours must be 0 or greater');
     }
 
-    // Validate Stripe IDs for recurring plans
-    if (formData.interval == SubscriptionInterval.month &&
-        formData.stripePriceId != null &&
-        formData.stripePriceId!.isEmpty) {
-      return (null, 'Stripe Price ID is required for recurring plans');
-    }
-
     final now = DateTime.now().toUtc();
     final plan = SubscriptionPlan(
       id: '', // Will be set by repository
@@ -73,7 +68,10 @@ class AdminSubscriptionService {
     try {
       final createdPlan = await _repository.createPlan(plan);
       return (createdPlan, null);
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Log the error
+      debugPrint('AdminSubscriptionService.createPlan error: $e');
+      debugPrint(stackTrace.toString());
       return (null, 'Failed to create plan: ${e.toString()}');
     }
   }
@@ -101,7 +99,9 @@ class AdminSubscriptionService {
     if (formData.name != null) updates['name'] = formData.name;
     if (formData.price != null) updates['price'] = formData.price;
     updates['currency'] = formData.currency;
-    if (formData.interval != null) updates['interval'] = formData.interval!.name;
+    if (formData.interval != null) {
+      updates['interval'] = formData.interval!.toJson();
+    }
     if (formData.deskHours != null) updates['deskHours'] = formData.deskHours;
     if (formData.meetingRoomHours != null) {
       updates['meetingRoomHours'] = formData.meetingRoomHours;
@@ -235,4 +235,3 @@ class AdminSubscriptionService {
     }
   }
 }
-

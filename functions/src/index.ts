@@ -3,6 +3,9 @@ import {logDocumentChanges} from "./modules/change-log/changeLog.trigger";
 import {
   subscriptionApi,
   createCheckoutSession,
+  createPlan,
+  updatePlan,
+  deletePlan,
 } from "./modules/subscription/subscription.routes";
 
 setGlobalOptions({
@@ -10,4 +13,11 @@ setGlobalOptions({
   region: "us-central1",
 });
 
-export {logDocumentChanges, subscriptionApi, createCheckoutSession};
+export {
+  logDocumentChanges,
+  subscriptionApi,
+  createCheckoutSession,
+  createPlan,
+  updatePlan,
+  deletePlan,
+};

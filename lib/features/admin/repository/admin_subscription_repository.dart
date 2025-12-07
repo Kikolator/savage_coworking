@@ -1,14 +1,101 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 
+import '../../../core/services/firebase_functions_service.dart';
 import '../../subscription/models/subscription.dart';
+import '../../subscription/models/subscription_interval.dart';
 import '../../subscription/models/subscription_plan.dart';
 import '../../subscription/models/subscription_status.dart';
 import '../models/admin_subscription_models.dart';
 
 class AdminSubscriptionRepository {
-  AdminSubscriptionRepository(this._firestore);
+  AdminSubscriptionRepository(this._firestore, this._functionsService);
 
   final FirebaseFirestore _firestore;
+  final FirebaseFunctionsService _functionsService;
+
+  /// Converts Firebase Functions timestamp serialization to Firestore Timestamp
+  /// Firebase Functions serializes Timestamps as {seconds: number, nanoseconds: number}
+  /// or sometimes as {_seconds: number, _nanoseconds: number}
+  /// Also handles cases where it's already a Timestamp object
+  void _convertTimestamps(Map<String, dynamic> result) {
+    // Handle createdAt
+    if (result['createdAt'] is! Timestamp) {
+      if (result['createdAt'] is Map) {
+        try {
+          final createdAtMap = result['createdAt'] as Map<String, dynamic>;
+          final secondsValue =
+              createdAtMap['seconds'] ?? createdAtMap['_seconds'];
+          final nanosecondsValue =
+              createdAtMap['nanoseconds'] ?? createdAtMap['_nanoseconds'];
+
+          if (secondsValue != null && secondsValue is num) {
+            final seconds = secondsValue.toInt();
+            final nanoseconds = (nanosecondsValue is num)
+                ? nanosecondsValue.toInt()
+                : (nanosecondsValue as int?) ?? 0;
+
+            result['createdAt'] = Timestamp(seconds, nanoseconds);
+          } else {
+            debugPrint(
+              'Warning: createdAt timestamp invalid format. '
+              'seconds: $secondsValue (${secondsValue?.runtimeType}), '
+              'nanoseconds: $nanosecondsValue (${nanosecondsValue?.runtimeType}), '
+              'map: $createdAtMap',
+            );
+            result['createdAt'] = Timestamp.now();
+          }
+        } catch (e, stackTrace) {
+          debugPrint(
+            'Error converting createdAt timestamp: $e. Value: ${result['createdAt']}',
+          );
+          debugPrint(stackTrace.toString());
+          result['createdAt'] = Timestamp.now();
+        }
+      } else if (result['createdAt'] == null) {
+        result['createdAt'] = Timestamp.now();
+      }
+    }
+
+    // Handle updatedAt
+    if (result['updatedAt'] is! Timestamp) {
+      if (result['updatedAt'] is Map) {
+        try {
+          final updatedAtMap = result['updatedAt'] as Map<String, dynamic>;
+          final secondsValue =
+              updatedAtMap['seconds'] ?? updatedAtMap['_seconds'];
+          final nanosecondsValue =
+              updatedAtMap['nanoseconds'] ?? updatedAtMap['_nanoseconds'];
+
+          if (secondsValue != null && secondsValue is num) {
+            final seconds = secondsValue.toInt();
+            final nanoseconds = (nanosecondsValue is num)
+                ? nanosecondsValue.toInt()
+                : (nanosecondsValue as int?) ?? 0;
+
+            result['updatedAt'] = Timestamp(seconds, nanoseconds);
+          } else {
+            debugPrint(
+              'Warning: updatedAt timestamp invalid format. '
+              'seconds: $secondsValue (${secondsValue?.runtimeType}), '
+              'nanoseconds: $nanosecondsValue (${nanosecondsValue?.runtimeType}), '
+              'map: $updatedAtMap',
+            );
+            result['updatedAt'] = Timestamp.now();
+          }
+        } catch (e, stackTrace) {
+          debugPrint(
+            'Error converting updatedAt timestamp: $e. Value: ${result['updatedAt']}',
+          );
+          debugPrint(stackTrace.toString());
+          result['updatedAt'] = Timestamp.now();
+        }
+      } else if (result['updatedAt'] == null) {
+        result['updatedAt'] = Timestamp.now();
+      }
+    }
+  }
 
   CollectionReference<Subscription> get _subscriptionsCollection => _firestore
       .collection('subscriptions')
@@ -57,11 +144,13 @@ class AdminSubscriptionRepository {
     final items = <AdminSubscriptionListItem>[];
     for (final subscription in subscriptions) {
       final userData = await _fetchUserData(subscription.userId);
-      items.add(AdminSubscriptionListItem(
-        subscription: subscription,
-        userEmail: userData['email'] as String?,
-        userDisplayName: userData['displayName'] as String?,
-      ));
+      items.add(
+        AdminSubscriptionListItem(
+          subscription: subscription,
+          userEmail: userData['email'] as String?,
+          userDisplayName: userData['displayName'] as String?,
+        ),
+      );
     }
 
     return items;
@@ -86,23 +175,144 @@ class AdminSubscriptionRepository {
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
-  /// Create a new subscription plan
+  /// Create a new subscription plan via callable function
   Future<SubscriptionPlan> createPlan(SubscriptionPlan plan) async {
-    final docRef = _plansCollection.doc();
-    final planToSave = plan.copyWith(id: docRef.id);
-    await docRef.set(planToSave);
-    return planToSave;
+    try {
+      final data = {
+        'name': plan.name,
+        'price': plan.price,
+        'currency': plan.currency,
+        'interval': plan.interval.toJson(), // Convert enum to string
+        'deskHours': plan.deskHours,
+        'meetingRoomHours': plan.meetingRoomHours,
+        'features': plan.features,
+        'isActive': plan.isActive,
+        // Stripe IDs are optional - backend will auto-create them
+        if (plan.stripePriceId != null) 'stripePriceId': plan.stripePriceId,
+        if (plan.stripeProductId != null)
+          'stripeProductId': plan.stripeProductId,
+      };
+
+      final result = await _functionsService.callFunction<Map<String, dynamic>>(
+        functionName: 'createPlan',
+        data: data,
+      );
+
+      // Log the raw result for debugging
+      if (kDebugMode) {
+        debugPrint(
+          'AdminSubscriptionRepository.createPlan raw result: $result',
+        );
+        debugPrint(
+          'createdAt type: ${result['createdAt']?.runtimeType}, value: ${result['createdAt']}',
+        );
+        debugPrint(
+          'updatedAt type: ${result['updatedAt']?.runtimeType}, value: ${result['updatedAt']}',
+        );
+      }
+
+      // Convert timestamp format from Firebase Functions serialization
+      _convertTimestamps(result);
+
+      try {
+        return SubscriptionPlan.fromJson(result);
+      } catch (e, stackTrace) {
+        // If parsing fails, try to fetch from Firestore as fallback
+        debugPrint(
+          'Error parsing plan from callable response: $e. Attempting to fetch from Firestore...',
+        );
+        debugPrint(stackTrace.toString());
+
+        final planId = result['id'] as String?;
+        if (planId != null) {
+          try {
+            final planDoc = await _plansCollection.doc(planId).get();
+            if (planDoc.exists) {
+              debugPrint(
+                'Successfully fetched plan from Firestore as fallback',
+              );
+              return planDoc.data()!;
+            }
+          } catch (fetchError) {
+            debugPrint('Error fetching plan from Firestore: $fetchError');
+          }
+        }
+
+        // If all else fails, rethrow the original error
+        rethrow;
+      }
+    } on FirebaseFunctionsException catch (e) {
+      // Log the error before throwing
+      debugPrint(
+        'AdminSubscriptionRepository.createPlan error: ${e.code} - ${e.message}',
+      );
+      if (e.details != null) {
+        debugPrint('Details: ${e.details}');
+      }
+      throw Exception('Failed to create plan: ${e.message ?? e.code}');
+    } catch (e, stackTrace) {
+      // Log any other errors
+      debugPrint('AdminSubscriptionRepository.createPlan unexpected error: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 
-  /// Update a subscription plan
+  /// Update a subscription plan via callable function
   Future<void> updatePlan(String planId, Map<String, dynamic> updates) async {
-    updates['updatedAt'] = Timestamp.fromDate(DateTime.now().toUtc());
-    await _plansCollection.doc(planId).update(updates);
+    try {
+      // Convert interval enum to string if present
+      if (updates.containsKey('interval') &&
+          updates['interval'] is SubscriptionInterval) {
+        updates['interval'] = (updates['interval'] as SubscriptionInterval)
+            .toJson();
+      }
+
+      final data = {'planId': planId, ...updates};
+
+      await _functionsService.callFunction(
+        functionName: 'updatePlan',
+        data: data,
+      );
+    } on FirebaseFunctionsException catch (e) {
+      // Log the error before throwing
+      debugPrint(
+        'AdminSubscriptionRepository.updatePlan error: ${e.code} - ${e.message}',
+      );
+      if (e.details != null) {
+        debugPrint('Details: ${e.details}');
+      }
+      throw Exception('Failed to update plan: ${e.message ?? e.code}');
+    } catch (e, stackTrace) {
+      // Log any other errors
+      debugPrint('AdminSubscriptionRepository.updatePlan unexpected error: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 
-  /// Delete a plan (soft delete by setting isActive to false)
+  /// Delete a plan via callable function
   Future<void> deletePlan(String planId) async {
-    await updatePlan(planId, {'isActive': false});
+    try {
+      await _functionsService.callFunction(
+        functionName: 'deletePlan',
+        data: {'planId': planId},
+      );
+    } on FirebaseFunctionsException catch (e) {
+      // Log the error before throwing
+      debugPrint(
+        'AdminSubscriptionRepository.deletePlan error: ${e.code} - ${e.message}',
+      );
+      if (e.details != null) {
+        debugPrint('Details: ${e.details}');
+      }
+      throw Exception('Failed to delete plan: ${e.message ?? e.code}');
+    } catch (e, stackTrace) {
+      // Log any other errors
+      debugPrint('AdminSubscriptionRepository.deletePlan unexpected error: $e');
+      debugPrint(stackTrace.toString());
+      rethrow;
+    }
   }
 
   /// Update subscription status
@@ -114,13 +324,8 @@ class AdminSubscriptionRepository {
   }
 
   /// Cancel a subscription
-  Future<void> cancelSubscription(
-    String subscriptionId,
-    bool immediate,
-  ) async {
-    final updates = <String, dynamic>{
-      'cancelAtPeriodEnd': !immediate,
-    };
+  Future<void> cancelSubscription(String subscriptionId, bool immediate) async {
+    final updates = <String, dynamic>{'cancelAtPeriodEnd': !immediate};
     if (immediate) {
       updates['status'] = SubscriptionStatus.cancelled.name;
     }
@@ -165,4 +370,3 @@ class AdminSubscriptionRepository {
     return snapshot.docs.isNotEmpty;
   }
 }
-
