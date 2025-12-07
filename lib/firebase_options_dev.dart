@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart'
 ///
 /// Example:
 /// ```dart
-/// import 'firebase_options.dart';
+/// import 'firebase_options_dev.dart';
 /// // ...
 /// await Firebase.initializeApp(
 ///   options: DefaultFirebaseOptions.currentPlatform,
@@ -53,13 +53,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBoIkC8EgdoZ48-xHe-9RgIjviJ6cVvsOY',
-    appId: '1:489719466429:web:b0f56ec9bd67224764aad4',
-    messagingSenderId: '489719466429',
-    projectId: 'savage-coworking',
-    authDomain: 'savage-coworking.firebaseapp.com',
-    storageBucket: 'savage-coworking.appspot.com',
-    measurementId: 'G-DM44PHRHD2',
+    apiKey: 'AIzaSyAb2RGvG8Xw4Jxq0mVhoHrOiOczPR_cyRs',
+    appId: '1:981244670144:web:5b07db1a484929adab7d25',
+    messagingSenderId: '981244670144',
+    projectId: 'savage-coworking-dev',
+    authDomain: 'savage-coworking-dev.firebaseapp.com',
+    storageBucket: 'savage-coworking-dev.firebasestorage.app',
   );
-
 }

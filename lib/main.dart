@@ -1,17 +1,23 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'firebase_options.dart';
+import 'firebase_options_dev.dart' as dev;
 import 'core/config/firebase_emulator_config.dart';
 import 'core/debug/debug_config.dart';
 import 'core/debug/debug_provider_observer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: kDebugMode
+        ? dev.DefaultFirebaseOptions.currentPlatform
+        : DefaultFirebaseOptions.currentPlatform,
+  );
   connectFirebaseEmulators();
 
   // Initialize debug configuration
