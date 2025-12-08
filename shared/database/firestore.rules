@@ -215,13 +215,6 @@ service cloud.firestore {
         && time.matches('^[0-9]{2}:[0-9]{2}$');
     }
 
-    function isValidDateString(date) {
-      // Validate YYYY-MM-DD format
-      return date is string
-        && date.size() == 10
-        && date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
-    }
-
     function isValidAllowedDaysOfWeek(days) {
       // Array of integers 0-6 (Sunday=0, Saturday=6)
       // Check each element is between 0 and 6
@@ -387,21 +380,6 @@ service cloud.firestore {
         && newData.createdAt == oldData.createdAt
         && (!('status' in newData) || isValidPassBundleStatus(newData.status))
         && (!('remainingCredits' in newData) || (newData.remainingCredits is int && newData.remainingCredits >= 0 && newData.remainingCredits <= newData.totalCredits));
-    }
-
-    function hasValidUsageCoreFields(data) {
-      return data.userId is string
-        && (data.subscriptionId is string || data.passBundleId is string)
-        && !(data.subscriptionId is string && data.passBundleId is string) // Exactly one must be set
-        && data.periodStart is timestamp
-        && data.periodEnd is timestamp
-        && data.periodEnd.toMillis() > data.periodStart.toMillis()
-        && data.deskMinutesUsed is int
-        && data.deskMinutesUsed >= 0
-        && data.meetingMinutesUsed is int
-        && data.meetingMinutesUsed >= 0
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
     }
 
     // Note: Usage validation functions removed - usage collection is backend-only (allow create/update: if false)
