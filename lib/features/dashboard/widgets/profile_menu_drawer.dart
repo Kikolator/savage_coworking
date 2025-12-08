@@ -38,23 +38,15 @@ class ProfileMenuDrawer extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Close button header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Menu',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
-                  tooltip: 'Close',
-                ),
-              ],
+            // Close button in upper left corner
+            Align(
+              alignment: Alignment.topLeft,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+                tooltip: 'Close',
+                padding: const EdgeInsets.all(16.0),
+              ),
             ),
             _buildUserHeader(context, user),
             const Divider(),
@@ -151,25 +143,18 @@ class ProfileMenuDrawer extends ConsumerWidget {
       child: SafeArea(
         child: Column(
           children: [
-            // Close button header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Menu',
-                    style: CupertinoTheme.of(
-                      context,
-                    ).textTheme.navTitleTextStyle,
-                  ),
-                ),
-                CupertinoButton(
-                  padding: const EdgeInsets.all(16.0),
+            // Close button in upper left corner
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minSize: 0,
                   child: const Icon(CupertinoIcons.xmark),
                   onPressed: () => Navigator.pop(context),
                 ),
-              ],
+              ),
             ),
             _buildUserHeader(context, user),
             const Divider(),
