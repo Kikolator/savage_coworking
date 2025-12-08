@@ -212,17 +212,12 @@ export async function updateSubscriptionHoursController(
   res: Response,
 ): Promise<void> {
   try {
-    const {id} = req.params;
-    const {deskHoursUsed, meetingRoomHoursUsed} = req.body as {
-      deskHoursUsed: number;
-      meetingRoomHoursUsed: number;
-    };
-    const subscription = await subscriptionService.updateSubscriptionHours(
-      id,
-      deskHoursUsed,
-      meetingRoomHoursUsed,
-    );
-    res.json(subscription);
+    // Hours usage is now tracked in the Usage collection, not in subscriptions
+    // This endpoint has been removed. Use the Usage API instead.
+    res.status(410).json({
+      message: "DEPRECATED: Use Usage API to track hours. This endpoint is no longer available.",
+    });
+    return;
   } catch (err: unknown) {
     const error = err as {statusCode?: number; message?: string};
     if (error.statusCode) {

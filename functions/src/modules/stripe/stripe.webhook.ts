@@ -3,14 +3,18 @@ import {Timestamp} from "firebase-admin/firestore";
 import {getEnvConfig} from "../../config/env";
 import * as subscriptionService from "../subscription/subscription.service";
 import * as subscriptionRepo from "../subscription/subscription.repository";
-import {SubscriptionInterval} from "../subscription/subscription.types";
+import {BillingType, BillingPeriod} from "../subscription/subscription.types";
 
 /**
- * Calculates period start and end dates based on interval.
- * @param {SubscriptionInterval} interval - Subscription interval.
+ * Calculates period start and end dates based on billing type and period.
+ * @param {BillingType} billingType - Billing type.
+ * @param {BillingPeriod} period - Billing period (required for recurring).
  * @return {{start: Timestamp, end: Timestamp}} Period dates.
  */
-function calculatePeriodDates(interval: SubscriptionInterval): {
+function calculatePeriodDates(
+  billingType: BillingType,
+  period?: BillingPeriod,
+): {
   start: Timestamp;
   end: Timestamp;
 } {
@@ -18,7 +22,7 @@ function calculatePeriodDates(interval: SubscriptionInterval): {
   const start = Timestamp.fromDate(now);
 
   let endDate: Date;
-  if (interval === "month") {
+  if (billingType === "recurring" && period === "month") {
     endDate = new Date(now);
     endDate.setMonth(endDate.getMonth() + 1);
   } else {
@@ -96,7 +100,10 @@ async function handleCheckoutSessionCompleted(
         );
       } else {
         // Fallback to calculated dates if not available
-        const calculated = calculatePeriodDates(plan.interval);
+        const calculated = calculatePeriodDates(
+          plan.billing.type,
+          plan.billing.period,
+        );
         start = calculated.start;
         end = calculated.end;
       }
@@ -106,13 +113,19 @@ async function handleCheckoutSessionCompleted(
         error,
       );
       // Fallback to calculated dates on error
-      const calculated = calculatePeriodDates(plan.interval);
+      const calculated = calculatePeriodDates(
+        plan.billing.type,
+        plan.billing.period,
+      );
       start = calculated.start;
       end = calculated.end;
     }
   } else {
     // For one-off payments, use calculated dates
-    const calculated = calculatePeriodDates(plan.interval);
+    const calculated = calculatePeriodDates(
+      plan.billing.type,
+      plan.billing.period,
+    );
     start = calculated.start;
     end = calculated.end;
   }
@@ -128,20 +141,15 @@ async function handleCheckoutSessionCompleted(
     currentPeriodEnd: end,
   };
 
-  // Add Stripe IDs based on mode
+  // Add Stripe subscription ID for recurring subscriptions
   if (session.mode === "subscription" && session.subscription) {
     const subscriptionId =
       typeof session.subscription === "string"
         ? session.subscription
         : session.subscription.id;
     subscriptionDto.stripeSubscriptionId = subscriptionId;
-  } else if (session.mode === "payment" && session.payment_intent) {
-    const paymentIntentId =
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent.id;
-    subscriptionDto.stripePaymentIntentId = paymentIntentId;
   }
+  // Note: One-off payments (payment mode) should create PassBundles, not Subscriptions
 
   // Create subscription (service will validate and check for existing)
   // Status will be automatically set to "active" since payment was successful

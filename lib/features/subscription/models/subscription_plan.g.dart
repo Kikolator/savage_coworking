@@ -11,19 +11,17 @@ _$SubscriptionPlanImpl _$$SubscriptionPlanImplFromJson(
 ) => _$SubscriptionPlanImpl(
   id: json['id'] as String,
   name: json['name'] as String,
-  price: (json['price'] as num).toInt(),
-  currency: json['currency'] as String,
-  interval: const SubscriptionIntervalConverter().fromJson(
-    json['interval'] as String,
-  ),
-  deskHours: (json['deskHours'] as num).toDouble(),
-  meetingRoomHours: (json['meetingRoomHours'] as num).toDouble(),
+  category: const PlanCategoryConverter().fromJson(json['category'] as String),
+  billing: Billing.fromJson(json['billing'] as Map<String, dynamic>),
+  quota: Quota.fromJson(json['quota'] as Map<String, dynamic>),
+  pricing: Pricing.fromJson(json['pricing'] as Map<String, dynamic>),
+  external: json['external'] == null
+      ? null
+      : External.fromJson(json['external'] as Map<String, dynamic>),
   features: (json['features'] as List<dynamic>)
       .map((e) => e as String)
       .toList(),
   isActive: json['isActive'] as bool,
-  stripePriceId: json['stripePriceId'] as String?,
-  stripeProductId: json['stripeProductId'] as String?,
   createdAt: const TimestampConverter().fromJson(
     json['createdAt'] as Timestamp,
   ),
@@ -37,15 +35,13 @@ Map<String, dynamic> _$$SubscriptionPlanImplToJson(
 ) => <String, dynamic>{
   'id': instance.id,
   'name': instance.name,
-  'price': instance.price,
-  'currency': instance.currency,
-  'interval': const SubscriptionIntervalConverter().toJson(instance.interval),
-  'deskHours': instance.deskHours,
-  'meetingRoomHours': instance.meetingRoomHours,
+  'category': const PlanCategoryConverter().toJson(instance.category),
+  'billing': instance.billing,
+  'quota': instance.quota,
+  'pricing': instance.pricing,
+  'external': instance.external,
   'features': instance.features,
   'isActive': instance.isActive,
-  'stripePriceId': instance.stripePriceId,
-  'stripeProductId': instance.stripeProductId,
   'createdAt': const TimestampConverter().toJson(instance.createdAt),
   'updatedAt': const TimestampConverter().toJson(instance.updatedAt),
 };

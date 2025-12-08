@@ -234,7 +234,7 @@ class _PlanCard extends StatelessWidget {
                 Expanded(
                   child: _PlanInfoItem(
                     label: 'Meeting Room Hours',
-                    value: plan.meetingRoomHoursLabel,
+                    value: plan.meetingHoursLabel,
                   ),
                 ),
               ],

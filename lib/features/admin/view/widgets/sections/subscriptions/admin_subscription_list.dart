@@ -165,7 +165,7 @@ class _SubscriptionCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          subscription.planName,
+                          subscription.display.planName,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -200,15 +200,19 @@ class _SubscriptionCard extends StatelessWidget {
                   Expanded(
                     child: _InfoItem(
                       label: 'Desk Hours',
-                      value:
-                          '${subscription.deskHoursUsed.toStringAsFixed(0)}/${subscription.deskHours == 0 ? '∞' : subscription.deskHours.toStringAsFixed(0)}',
+                      value: subscription.effectiveQuota.deskHoursPerPeriod == null ||
+                              subscription.effectiveQuota.deskHoursPerPeriod == 0
+                          ? 'Unlimited'
+                          : '${(subscription.effectiveQuota.deskHoursPerPeriod ?? 0).toStringAsFixed(0)}/period',
                     ),
                   ),
                   Expanded(
                     child: _InfoItem(
                       label: 'Meeting Room Hours',
-                      value:
-                          '${subscription.meetingRoomHoursUsed.toStringAsFixed(0)}/${subscription.meetingRoomHours == 0 ? '∞' : subscription.meetingRoomHours.toStringAsFixed(0)}',
+                      value: subscription.effectiveQuota.meetingHoursPerPeriod == null ||
+                              subscription.effectiveQuota.meetingHoursPerPeriod == 0
+                          ? 'Unlimited'
+                          : '${(subscription.effectiveQuota.meetingHoursPerPeriod ?? 0).toStringAsFixed(0)}/period',
                     ),
                   ),
                 ],

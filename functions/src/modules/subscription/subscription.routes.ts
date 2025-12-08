@@ -151,14 +151,17 @@ export const createCheckoutSession = onCall(
     }
 
     // Validate Stripe IDs
-    if (plan.interval === "month" && !plan.stripePriceId) {
+    const stripePriceId = plan.external?.stripePriceId;
+    const stripeProductId = plan.external?.stripeProductId;
+
+    if (plan.billing.type === "recurring" && !stripePriceId) {
       throw new HttpsError(
         "failed-precondition",
         "STRIPE_PRICE_ID_REQUIRED_FOR_RECURRING",
       );
     }
 
-    if (plan.interval === "one_off" && !plan.stripePriceId) {
+    if (plan.billing.type === "oneOff" && !stripePriceId) {
       throw new HttpsError(
         "failed-precondition",
         "STRIPE_PRICE_ID_REQUIRED_FOR_ONE_OFF",
@@ -177,9 +180,9 @@ export const createCheckoutSession = onCall(
       customerEmail,
       successUrl,
       cancelUrl,
-      stripePriceId: plan.stripePriceId,
-      stripeProductId: plan.stripeProductId,
-      mode: plan.interval === "month" ? "subscription" : "payment",
+      stripePriceId: stripePriceId!,
+      stripeProductId: stripeProductId!,
+      mode: plan.billing.type === "recurring" ? "subscription" : "payment",
     };
 
     const result = await stripeService.createCheckoutSession(params);

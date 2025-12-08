@@ -125,24 +125,16 @@ function isValidStatusTransition(
 }
 
 /**
- * Validates that hours usage doesn't exceed limits.
- * @param {number} deskHours - Allocated desk hours.
- * @param {number} deskHoursUsed - Used desk hours.
- * @param {number} meetingRoomHours - Allocated meeting room hours.
- * @param {number} meetingRoomHoursUsed - Used meeting room hours.
+ * Validates that billing period is required when type is recurring.
+ * @param {SubscriptionPlanCreateDto} dto - Plan creation data.
  * @return {void}
  */
-function validateHoursUsage(
-  deskHours: number,
-  deskHoursUsed: number,
-  meetingRoomHours: number,
-  meetingRoomHoursUsed: number,
-): void {
-  if (deskHours > 0 && deskHoursUsed > deskHours) {
-    throw new HoursExceededError("desk");
+function validateBilling(dto: SubscriptionPlanCreateDto): void {
+  if (dto.billing.type === "recurring" && !dto.billing.period) {
+    throw new Error("BILLING_PERIOD_REQUIRED_FOR_RECURRING");
   }
-  if (meetingRoomHours > 0 && meetingRoomHoursUsed > meetingRoomHours) {
-    throw new HoursExceededError("meetingRoom");
+  if (dto.billing.intervalCount !== undefined && dto.billing.intervalCount < 1) {
+    throw new Error("INTERVAL_COUNT_MUST_BE_POSITIVE");
   }
 }
 
@@ -165,21 +157,17 @@ export async function createSubscription(
     throw new Error("PLAN_NOT_ACTIVE");
   }
 
-  // Check if user already has an active subscription
-  const existing = await subscriptionRepo.findActiveSubscriptionByUserId(
-    dto.userId,
-  );
-  if (existing) {
-    throw new ActiveSubscriptionExistsError();
+  // Only recurring plans can create subscriptions
+  if (plan.billing.type !== "recurring") {
+    throw new Error("ONLY_RECURRING_PLANS_CAN_CREATE_SUBSCRIPTIONS");
   }
 
-  // Validate Stripe IDs based on plan type
-  if (plan.interval === "month" && !dto.stripeSubscriptionId) {
+  // Check if user already has an active subscription (enforced in repository)
+  // Repository will throw if active subscription exists
+
+  // Validate Stripe subscription ID for recurring plans
+  if (!dto.stripeSubscriptionId) {
     throw new Error("STRIPE_SUBSCRIPTION_ID_REQUIRED_FOR_RECURRING");
-  }
-
-  if (plan.interval === "one_off" && !dto.stripePaymentIntentId) {
-    throw new Error("STRIPE_PAYMENT_INTENT_ID_REQUIRED_FOR_ONE_OFF");
   }
 
   return subscriptionRepo.createSubscription(dto, plan);
@@ -240,17 +228,8 @@ export async function updateSubscription(
     }
   }
 
-  // Validate hours usage if being updated
-  const deskHours = dto.deskHoursUsed ?? existing.deskHoursUsed;
-  const meetingRoomHours =
-    dto.meetingRoomHoursUsed ?? existing.meetingRoomHoursUsed;
-
-  validateHoursUsage(
-    existing.deskHours,
-    deskHours,
-    existing.meetingRoomHours,
-    meetingRoomHours,
-  );
+  // Note: Hours usage is now tracked in Usage collection, not in subscription
+  // Validation of hours is done at booking/usage time, not here
 
   return subscriptionRepo.updateSubscription(id, dto);
 }
@@ -283,32 +262,25 @@ export async function cancelSubscription(
 }
 
 /**
- * Updates subscription hours usage.
+ * Updates subscription cancellation info.
  * @param {string} id - Subscription ID.
- * @param {number} deskHoursUsed - Used desk hours.
- * @param {number} meetingRoomHoursUsed - Used meeting room hours.
+ * @param {string} cancelledBy - User ID who cancelled.
  * @return {Promise<Subscription>} Updated subscription.
  */
-export async function updateSubscriptionHours(
+export async function cancelSubscriptionWithUser(
   id: string,
-  deskHoursUsed: number,
-  meetingRoomHoursUsed: number,
+  cancelledBy: string,
 ): Promise<Subscription> {
   const existing = await subscriptionRepo.findSubscriptionById(id);
   if (!existing) {
     throw new SubscriptionNotFoundError();
   }
 
-  validateHoursUsage(
-    existing.deskHours,
-    deskHoursUsed,
-    existing.meetingRoomHours,
-    meetingRoomHoursUsed,
-  );
-
   return subscriptionRepo.updateSubscription(id, {
-    deskHoursUsed,
-    meetingRoomHoursUsed,
+    status: "cancelled",
+    cancelAtPeriodEnd: false,
+    cancelledAt: existing.updatedAt, // Use current timestamp
+    cancelledBy,
   });
 }
 
@@ -334,6 +306,9 @@ export async function deleteSubscription(id: string): Promise<void> {
 export async function createPlan(
   dto: SubscriptionPlanCreateDto,
 ): Promise<SubscriptionPlan> {
+  // Validate billing configuration
+  validateBilling(dto);
+
   // Check if plan name is already taken
   const allPlans = await subscriptionRepo.findAllPlans();
   const nameExists = allPlans.some((plan) => plan.name === dto.name);
@@ -342,16 +317,20 @@ export async function createPlan(
   }
 
   // Auto-create Stripe resources if not provided
-  let stripeProductId = dto.stripeProductId;
-  let stripePriceId = dto.stripePriceId;
+  let stripeProductId = dto.external?.stripeProductId;
+  let stripePriceId = dto.external?.stripePriceId;
 
   if (!stripeProductId || !stripePriceId) {
     try {
+      const interval =
+        dto.billing.type === "recurring"
+          ? (dto.billing.period === "month" ? "month" : "one_off")
+          : "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name,
-        price: dto.price,
-        currency: dto.currency,
-        interval: dto.interval,
+        price: dto.pricing.amount,
+        currency: dto.pricing.currency,
+        interval: interval as "month" | "one_off",
       });
       stripeProductId = stripeResources.productId;
       stripePriceId = stripeResources.priceId;
@@ -368,13 +347,15 @@ export async function createPlan(
   try {
     return await subscriptionRepo.createPlan({
       ...dto,
-      stripeProductId,
-      stripePriceId,
+      external: {
+        stripeProductId,
+        stripePriceId,
+      },
     });
   } catch (error) {
     // Rollback: If plan creation fails and we created Stripe resources,
     // archive them
-    if (!dto.stripeProductId && stripeProductId) {
+    if (!dto.external?.stripeProductId && stripeProductId) {
       try {
         await stripeService.archiveStripeProduct(stripeProductId);
       } catch (rollbackError) {
@@ -439,10 +420,10 @@ export async function updatePlan(
     }
 
     // Update Stripe product name if product exists
-    if (existing.stripeProductId) {
+    if (existing.external?.stripeProductId) {
       try {
         await stripeService.updateStripeProduct(
-          existing.stripeProductId,
+          existing.external.stripeProductId,
           dto.name,
         );
       } catch (error) {
@@ -456,24 +437,38 @@ export async function updatePlan(
   }
 
   // Handle price change (prices are immutable, create new one)
-  const priceChanged = dto.price !== undefined && dto.price !== existing.price;
+  const priceChanged =
+    dto.pricing?.amount !== undefined &&
+    dto.pricing.amount !== existing.pricing.amount;
   const currencyChanged =
-    dto.currency !== undefined && dto.currency !== existing.currency;
-  const intervalChanged =
-    dto.interval !== undefined && dto.interval !== existing.interval;
+    dto.pricing?.currency !== undefined &&
+    dto.pricing.currency !== existing.pricing.currency;
+  const billingChanged =
+    dto.billing !== undefined &&
+    (dto.billing.type !== existing.billing.type ||
+      dto.billing.period !== existing.billing.period ||
+      dto.billing.intervalCount !== existing.billing.intervalCount);
 
   let newStripePriceId: string | undefined;
   let newStripeProductId: string | undefined;
 
+  const existingProductId = existing.external?.stripeProductId;
+  const existingPriceId = existing.external?.stripePriceId;
+
   // If price or currency changed, create new price
-  if ((priceChanged || currencyChanged) && existing.stripeProductId) {
+  if ((priceChanged || currencyChanged) && existingProductId) {
     try {
-      const interval = dto.interval ?? existing.interval;
+      const interval =
+        (dto.billing ?? existing.billing).type === "recurring"
+          ? ((dto.billing ?? existing.billing).period === "month"
+              ? "month"
+              : "one_off")
+          : "one_off";
       newStripePriceId = await stripeService.createStripePrice({
-        productId: existing.stripeProductId,
-        price: dto.price ?? existing.price,
-        currency: dto.currency ?? existing.currency,
-        interval,
+        productId: existingProductId,
+        price: dto.pricing?.amount ?? existing.pricing.amount,
+        currency: dto.pricing?.currency ?? existing.pricing.currency,
+        interval: interval as "month" | "one_off",
       });
     } catch (error) {
       const errorMessage =
@@ -484,14 +479,18 @@ export async function updatePlan(
     }
   }
 
-  // If interval changed, need to create new product/price combination
-  if (intervalChanged && dto.interval) {
+  // If billing changed, need to create new product/price combination
+  if (billingChanged && dto.billing) {
     try {
+      const interval =
+        dto.billing.type === "recurring"
+          ? (dto.billing.period === "month" ? "month" : "one_off")
+          : "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name ?? existing.name,
-        price: dto.price ?? existing.price,
-        currency: dto.currency ?? existing.currency,
-        interval: dto.interval,
+        price: dto.pricing?.amount ?? existing.pricing.amount,
+        currency: dto.pricing?.currency ?? existing.pricing.currency,
+        interval: interval as "month" | "one_off",
       });
       newStripeProductId = stripeResources.productId;
       newStripePriceId = stripeResources.priceId;
@@ -499,22 +498,27 @@ export async function updatePlan(
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       throw new StripeOperationError(
-        `Failed to create Stripe resources for interval change: ${errorMessage}`,
+        `Failed to create Stripe resources for billing change: ${errorMessage}`,
       );
     }
   }
 
-  // If plan doesn't have Stripe IDs but price is being updated, create both
+  // If plan doesn't have Stripe IDs but price/billing is being updated, create both
   if (
-    !existing.stripeProductId &&
-    (priceChanged || currencyChanged || intervalChanged)
+    !existingProductId &&
+    (priceChanged || currencyChanged || billingChanged)
   ) {
     try {
+      const billing = dto.billing ?? existing.billing;
+      const interval =
+        billing.type === "recurring"
+          ? (billing.period === "month" ? "month" : "one_off")
+          : "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name ?? existing.name,
-        price: dto.price ?? existing.price,
-        currency: dto.currency ?? existing.currency,
-        interval: dto.interval ?? existing.interval,
+        price: dto.pricing?.amount ?? existing.pricing.amount,
+        currency: dto.pricing?.currency ?? existing.pricing.currency,
+        interval: interval as "month" | "one_off",
       });
       newStripeProductId = stripeResources.productId;
       newStripePriceId = stripeResources.priceId;
@@ -529,11 +533,11 @@ export async function updatePlan(
 
   // Build update DTO with new Stripe IDs if created
   const updateDto: SubscriptionPlanUpdateDto = {...dto};
-  if (newStripePriceId) {
-    updateDto.stripePriceId = newStripePriceId;
-  }
-  if (newStripeProductId) {
-    updateDto.stripeProductId = newStripeProductId;
+  if (newStripePriceId || newStripeProductId) {
+    updateDto.external = {
+      stripeProductId: newStripeProductId ?? existingProductId,
+      stripePriceId: newStripePriceId ?? existingPriceId,
+    };
   }
 
   try {
@@ -573,16 +577,18 @@ export async function deletePlan(id: string): Promise<void> {
   }
 
   // Archive Stripe product if it exists
-  if (existing.stripeProductId) {
+  if (existing.external?.stripeProductId) {
     try {
-      await stripeService.archiveStripeProduct(existing.stripeProductId);
+      await stripeService.archiveStripeProduct(
+        existing.external.stripeProductId,
+      );
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       // Log warning but continue with deletion
       // (Stripe product may already be archived or deleted)
       console.warn(
-        `Failed to archive Stripe product ${existing.stripeProductId}: ${errorMessage}`,
+        `Failed to archive Stripe product ${existing.external.stripeProductId}: ${errorMessage}`,
       );
     }
   }

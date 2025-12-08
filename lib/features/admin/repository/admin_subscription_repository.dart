@@ -4,9 +4,13 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/services/firebase_functions_service.dart';
 import '../../subscription/models/subscription.dart';
-import '../../subscription/models/subscription_interval.dart';
 import '../../subscription/models/subscription_plan.dart';
 import '../../subscription/models/subscription_status.dart';
+import '../../subscription/models/plan_category.dart';
+import '../../subscription/models/billing_type.dart';
+import '../../subscription/models/billing_period.dart';
+import '../../subscription/models/access_type.dart';
+import '../../subscription/models/seat_type.dart';
 import '../models/admin_subscription_models.dart';
 
 class AdminSubscriptionRepository {
@@ -180,17 +184,43 @@ class AdminSubscriptionRepository {
     try {
       final data = {
         'name': plan.name,
-        'price': plan.price,
-        'currency': plan.currency,
-        'interval': plan.interval.toJson(), // Convert enum to string
-        'deskHours': plan.deskHours,
-        'meetingRoomHours': plan.meetingRoomHours,
+        'category': PlanCategoryX(plan.category).toJson(),
+        'billing': {
+          'type': BillingTypeX(plan.billing.type).toJson(),
+          'period': plan.billing.period != null
+              ? BillingPeriodX(plan.billing.period!).toJson()
+              : null,
+          'intervalCount': plan.billing.intervalCount,
+        },
+        'quota': {
+          'dayPassCredits': plan.quota.dayPassCredits,
+          'deskHoursPerPeriod': plan.quota.deskHoursPerPeriod,
+          'meetingHoursPerPeriod': plan.quota.meetingHoursPerPeriod,
+          'access': {
+            'type': AccessTypeX(plan.quota.access.type).toJson(),
+            'startTime': plan.quota.access.startTime,
+            'endTime': plan.quota.access.endTime,
+            'allowedDaysOfWeek': plan.quota.access.allowedDaysOfWeek,
+          },
+          if (plan.quota.seatType != null)
+            'seatType': SeatTypeX(plan.quota.seatType!).toJson(),
+        },
+        'pricing': {
+          'currency': plan.pricing.currency,
+          'amount': plan.pricing.amount,
+          'billingDescription': plan.pricing.billingDescription,
+        },
         'features': plan.features,
         'isActive': plan.isActive,
         // Stripe IDs are optional - backend will auto-create them
-        if (plan.stripePriceId != null) 'stripePriceId': plan.stripePriceId,
-        if (plan.stripeProductId != null)
-          'stripeProductId': plan.stripeProductId,
+        if (plan.external != null) ...{
+          'external': {
+            if (plan.external!.stripeProductId != null)
+              'stripeProductId': plan.external!.stripeProductId,
+            if (plan.external!.stripePriceId != null)
+              'stripePriceId': plan.external!.stripePriceId,
+          },
+        },
       };
 
       final result = await _functionsService.callFunction<Map<String, dynamic>>(
@@ -261,11 +291,14 @@ class AdminSubscriptionRepository {
   /// Update a subscription plan via callable function
   Future<void> updatePlan(String planId, Map<String, dynamic> updates) async {
     try {
-      // Convert interval enum to string if present
-      if (updates.containsKey('interval') &&
-          updates['interval'] is SubscriptionInterval) {
-        updates['interval'] = (updates['interval'] as SubscriptionInterval)
-            .toJson();
+      // Convert nested enums to strings if present
+      if (updates.containsKey('category') && updates['category'] is! String) {
+        // Assume it's a PlanCategory enum
+        final category = updates['category'];
+        if (category.toString().contains('PlanCategory')) {
+          // Extract the enum value name
+          updates['category'] = category.toString().split('.').last;
+        }
       }
 
       final data = {'planId': planId, ...updates};

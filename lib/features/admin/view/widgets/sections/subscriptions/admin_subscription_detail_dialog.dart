@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../providers/admin_subscription_providers.dart';
-import '../../../../viewmodel/admin_subscription_view_model.dart';
 import '../../../../../subscription/models/subscription_status.dart';
 import '../../../../../subscription/models/subscription.dart';
+import '../../../../../subscription/models/billing_type.dart';
 import 'status_chip.dart';
 
 class AdminSubscriptionDetailDialog extends ConsumerWidget {
@@ -78,7 +78,7 @@ class AdminSubscriptionDetailDialog extends ConsumerWidget {
                       children: [
                         _DetailRow(
                           label: 'Plan',
-                          value: subscription.planName,
+                          value: subscription.display.planName,
                         ),
                         _DetailRow(
                           label: 'Status',
@@ -89,8 +89,10 @@ class AdminSubscriptionDetailDialog extends ConsumerWidget {
                           value: subscription.billingCycle,
                         ),
                         _DetailRow(
-                          label: 'Renews Automatically',
-                          value: subscription.renewsAutomatically ? 'Yes' : 'No',
+                          label: 'Billing Type',
+                          value: subscription.billing.type == BillingType.recurring
+                              ? 'Recurring'
+                              : 'One-time',
                         ),
                         if (subscription.cancelAtPeriodEnd)
                           _DetailRow(
@@ -123,13 +125,21 @@ class AdminSubscriptionDetailDialog extends ConsumerWidget {
                       children: [
                         _DetailRow(
                           label: 'Desk Hours',
-                          value:
-                              '${subscription.deskHoursUsed.toStringAsFixed(0)} / ${subscription.deskHours == 0 ? '∞' : subscription.deskHours.toStringAsFixed(0)}',
+                          value: subscription.effectiveQuota.deskHoursPerPeriod == null ||
+                                  subscription.effectiveQuota.deskHoursPerPeriod == 0
+                              ? 'Unlimited'
+                              : '${(subscription.effectiveQuota.deskHoursPerPeriod ?? 0).toStringAsFixed(0)} hours per period',
                         ),
                         _DetailRow(
                           label: 'Meeting Room Hours',
-                          value:
-                              '${subscription.meetingRoomHoursUsed.toStringAsFixed(0)} / ${subscription.meetingRoomHours == 0 ? '∞' : subscription.meetingRoomHours.toStringAsFixed(0)}',
+                          value: subscription.effectiveQuota.meetingHoursPerPeriod == null ||
+                                  subscription.effectiveQuota.meetingHoursPerPeriod == 0
+                              ? 'Unlimited'
+                              : '${(subscription.effectiveQuota.meetingHoursPerPeriod ?? 0).toStringAsFixed(0)} hours per period',
+                        ),
+                        const _DetailRow(
+                          label: 'Usage',
+                          value: 'Tracked separately in Usage collection',
                         ),
                       ],
                     ),
@@ -145,11 +155,6 @@ class AdminSubscriptionDetailDialog extends ConsumerWidget {
                           _DetailRow(
                             label: 'Subscription ID',
                             value: subscription.stripeSubscriptionId!,
-                          ),
-                        if (subscription.stripePaymentIntentId != null)
-                          _DetailRow(
-                            label: 'Payment Intent ID',
-                            value: subscription.stripePaymentIntentId!,
                           ),
                       ],
                     ),

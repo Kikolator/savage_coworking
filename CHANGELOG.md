@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- New flexible subscription model structure with nested objects:
+  - `SubscriptionPlan` with `category`, `billing`, `quota`, `pricing`, and `external` objects
+  - `Subscription` model for recurring subscriptions only (one-off purchases use `PassBundle`)
+  - `PassBundle` collection for one-time daypass purchases
+  - `Usage` collection for tracking resource consumption separately from subscriptions
+  - `Booking` collection replacing `hot_desk_booking` with `startAt`/`endAt` DateTime fields
+  - `MembershipSummary` denormalized field on user documents for fast reads
+- Plan categories: `dayPass`, `explore`, `nomad`, `fix` with specific quota configurations
+- Billing types: `oneOff` and `recurring` with period support (`day`, `month`)
+- Access types: `business` (with time restrictions) and `24_7` (unrestricted)
+- Seat types: `hot` and `fixed` for desk assignment
+- Cloud Functions for automatically updating `MembershipSummary` on subscription/passBundle/usage changes
+- Firestore security rules for all new collections with comprehensive validation
+- TypeScript and Dart model definitions with Freezed classes and JSON serialization
+- Single active subscription enforcement per user (multiple pass bundles allowed)
+- Admin-only `overrides` field on subscriptions for custom contract variables
+- Cancellation tracking: `cancelAtPeriodEnd`, `cancelledAt`, `cancelledBy` fields
 - Subscription status is now automatically set to "active" when created from successful Stripe payments (via webhook), eliminating the need for manual status updates.
 - User document creation in Firestore after successful signup, with User model and UserRepository following the shared schema.
 - Shared `deskBookings` schema coverage, Flutter MVVM feature, and Firestore rules that enable members to create, manage, and validate hot desk reservations.
@@ -45,6 +62,19 @@ All notable changes to this project will be documented in this file.
   - Improved form validation and error handling
 
 ### Changed
+- Subscription model restructured: removed flat fields (`price`, `currency`, `interval`, `deskHours`, etc.) in favor of nested objects
+- Subscription plans now use `billing` object instead of `interval` field
+- Subscription plans now use `quota` object with `deskHoursPerPeriod`/`meetingHoursPerPeriod` instead of flat `deskHours`/`meetingRoomHours`
+- Subscription plans now use `pricing` object instead of flat `price`/`currency` fields
+- Subscription plans now use `external` object for Stripe IDs instead of flat `stripeProductId`/`stripePriceId` fields
+- Subscriptions now include `billing`, `effectiveQuota`, and `display` objects
+- Subscriptions are now only for recurring plans (one-off purchases create `PassBundle` documents)
+- Booking model now uses `startAt`/`endAt` DateTime fields instead of `date`/`startTime`/`endTime` strings
+- Hours usage tracking moved from subscription documents to separate `Usage` collection
+- Removed `updateSubscriptionHours` endpoint (usage now tracked in `Usage` collection)
+- Stripe webhook updated to use new billing structure
+- Admin subscription service and UI updated to work with new model structure
+- Test files updated to use new subscription model structure
 - Bottom navigation bar now follows Material 3 and Cupertino design guidelines with proper spacing, icon sizing, and accessibility support.
 - Bottom navigation bar uses Material 3 on web platforms regardless of underlying OS.
 - Rewrote `README.md` with project overview, setup, and workflow guidance.
@@ -57,6 +87,9 @@ All notable changes to this project will be documented in this file.
 - Enhanced webhook error handling with better logging, context, and appropriate HTTP status codes.
 
 ### Fixed
+- Fixed TypeScript build errors in subscription service, webhook handler, and test files
+- Fixed Dart linter errors in subscription and admin view models
+- Fixed enum serialization issues in admin repository and service
 - Fixed TypeScript build output path in Firebase Functions, ensuring compiled files are correctly placed in `lib/` directory for emulator and deployment.
 - Fixed error handling for Firestore JavaScript objects on web platform, preventing type mismatch errors when booking desks.
 - Fixed RangeError when displaying booking confirmation dialog with empty booking ID.

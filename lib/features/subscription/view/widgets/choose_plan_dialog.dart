@@ -83,8 +83,10 @@ class PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUnlimitedDesk = plan.deskHours == 0;
-    final isUnlimitedMeeting = plan.meetingRoomHours == 0;
+    final deskHours = plan.quota.deskHoursPerPeriod ?? 0;
+    final meetingHours = plan.quota.meetingHoursPerPeriod ?? 0;
+    final isUnlimitedDesk = deskHours == 0;
+    final isUnlimitedMeeting = meetingHours == 0;
 
     return Card(
       elevation: 2,
@@ -144,7 +146,7 @@ class PlanCard extends StatelessWidget {
                 label: 'Desk Hours',
                 value: isUnlimitedDesk
                     ? 'Unlimited'
-                    : '${plan.deskHours.toStringAsFixed(0)} hours',
+                    : '${deskHours.toStringAsFixed(0)} hours',
               ),
               const SizedBox(height: 12),
               _FeatureRow(
@@ -152,7 +154,7 @@ class PlanCard extends StatelessWidget {
                 label: 'Meeting Room Hours',
                 value: isUnlimitedMeeting
                     ? 'Unlimited'
-                    : '${plan.meetingRoomHours.toStringAsFixed(0)} hours',
+                    : '${meetingHours.toStringAsFixed(0)} hours',
               ),
               if (plan.features.isNotEmpty) ...[
                 const SizedBox(height: 16),

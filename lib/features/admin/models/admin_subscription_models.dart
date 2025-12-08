@@ -1,7 +1,11 @@
 import '../../subscription/models/subscription.dart';
 import '../../subscription/models/subscription_plan.dart';
 import '../../subscription/models/subscription_status.dart';
-import '../../subscription/models/subscription_interval.dart';
+import '../../subscription/models/plan_category.dart';
+import '../../subscription/models/billing_type.dart';
+import '../../subscription/models/billing_period.dart';
+import '../../subscription/models/access_type.dart';
+import '../../subscription/models/seat_type.dart';
 
 /// Subscription list item with user information for admin display
 class AdminSubscriptionListItem {
@@ -25,11 +29,20 @@ class AdminPlanFormData {
   const AdminPlanFormData({
     this.id,
     this.name,
+    this.category,
+    this.billingType,
+    this.billingPeriod,
+    this.intervalCount = 1,
     this.price,
     this.currency = 'usd',
-    this.interval,
+    this.billingDescription,
     this.deskHours,
     this.meetingRoomHours,
+    this.dayPassCredits,
+    this.accessType,
+    this.startTime,
+    this.endTime,
+    this.seatType,
     this.features = const [],
     this.isActive = true,
     this.stripePriceId,
@@ -38,11 +51,20 @@ class AdminPlanFormData {
 
   final String? id;
   final String? name;
+  final PlanCategory? category;
+  final BillingType? billingType;
+  final BillingPeriod? billingPeriod;
+  final int intervalCount;
   final int? price; // Price in cents
   final String currency;
-  final SubscriptionInterval? interval;
+  final String? billingDescription;
   final double? deskHours;
   final double? meetingRoomHours;
+  final int? dayPassCredits;
+  final AccessType? accessType;
+  final String? startTime; // HH:mm format
+  final String? endTime; // HH:mm format
+  final SeatType? seatType;
   final List<String> features;
   final bool isActive;
   final String? stripePriceId;
@@ -51,11 +73,20 @@ class AdminPlanFormData {
   AdminPlanFormData copyWith({
     String? id,
     String? name,
+    PlanCategory? category,
+    BillingType? billingType,
+    BillingPeriod? billingPeriod,
+    int? intervalCount,
     int? price,
     String? currency,
-    SubscriptionInterval? interval,
+    String? billingDescription,
     double? deskHours,
     double? meetingRoomHours,
+    int? dayPassCredits,
+    AccessType? accessType,
+    String? startTime,
+    String? endTime,
+    SeatType? seatType,
     List<String>? features,
     bool? isActive,
     String? stripePriceId,
@@ -64,11 +95,20 @@ class AdminPlanFormData {
     return AdminPlanFormData(
       id: id ?? this.id,
       name: name ?? this.name,
+      category: category ?? this.category,
+      billingType: billingType ?? this.billingType,
+      billingPeriod: billingPeriod ?? this.billingPeriod,
+      intervalCount: intervalCount ?? this.intervalCount,
       price: price ?? this.price,
       currency: currency ?? this.currency,
-      interval: interval ?? this.interval,
+      billingDescription: billingDescription ?? this.billingDescription,
       deskHours: deskHours ?? this.deskHours,
       meetingRoomHours: meetingRoomHours ?? this.meetingRoomHours,
+      dayPassCredits: dayPassCredits ?? this.dayPassCredits,
+      accessType: accessType ?? this.accessType,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      seatType: seatType ?? this.seatType,
       features: features ?? this.features,
       isActive: isActive ?? this.isActive,
       stripePriceId: stripePriceId ?? this.stripePriceId,
@@ -81,15 +121,24 @@ class AdminPlanFormData {
     return AdminPlanFormData(
       id: plan.id,
       name: plan.name,
-      price: plan.price,
-      currency: plan.currency,
-      interval: plan.interval,
-      deskHours: plan.deskHours,
-      meetingRoomHours: plan.meetingRoomHours,
+      category: plan.category,
+      billingType: plan.billing.type,
+      billingPeriod: plan.billing.period,
+      intervalCount: plan.billing.intervalCount,
+      price: plan.pricing.amount,
+      currency: plan.pricing.currency,
+      billingDescription: plan.pricing.billingDescription,
+      deskHours: plan.quota.deskHoursPerPeriod,
+      meetingRoomHours: plan.quota.meetingHoursPerPeriod,
+      dayPassCredits: plan.quota.dayPassCredits,
+      accessType: plan.quota.access.type,
+      startTime: plan.quota.access.startTime,
+      endTime: plan.quota.access.endTime,
+      seatType: plan.quota.seatType,
       features: List<String>.from(plan.features),
       isActive: plan.isActive,
-      stripePriceId: plan.stripePriceId,
-      stripeProductId: plan.stripeProductId,
+      stripePriceId: plan.external?.stripePriceId,
+      stripeProductId: plan.external?.stripeProductId,
     );
   }
 }
@@ -139,4 +188,3 @@ class AdminSubscriptionFilters {
         endDate != null;
   }
 }
-

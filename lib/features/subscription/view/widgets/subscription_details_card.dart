@@ -17,8 +17,10 @@ class SubscriptionDetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM dd, yyyy');
-    final deskHoursLeft = subscription.deskHoursLeft;
-    final meetingRoomHoursLeft = subscription.meetingRoomHoursLeft;
+    // Note: Usage data should come from Usage collection or MembershipSummary
+    // For now, showing quota limits only
+    final deskHoursPerPeriod = subscription.deskHoursPerPeriod ?? 0;
+    final meetingHoursPerPeriod = subscription.meetingHoursPerPeriod ?? 0;
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -35,7 +37,7 @@ class SubscriptionDetailsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        subscription.planName,
+                        subscription.display.planName,
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -111,27 +113,29 @@ class SubscriptionDetailsCard extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 24),
             const Text(
-              'Hours Remaining',
+              'Quota Limits',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Usage tracking is managed separately. Check your usage in the dashboard.',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
               ),
             ),
             const SizedBox(height: 16),
-            _HoursCard(
+            _QuotaCard(
               icon: Icons.desk,
               label: 'Desk Hours',
-              used: subscription.deskHoursUsed,
-              total: subscription.deskHours,
-              remaining: deskHoursLeft,
+              quota: deskHoursPerPeriod,
             ),
             const SizedBox(height: 12),
-            _HoursCard(
+            _QuotaCard(
               icon: Icons.meeting_room,
               label: 'Meeting Room Hours',
-              used: subscription.meetingRoomHoursUsed,
-              total: subscription.meetingRoomHours,
-              remaining: meetingRoomHoursLeft,
+              quota: meetingHoursPerPeriod,
             ),
             const SizedBox(height: 32),
             const Divider(),
@@ -216,103 +220,64 @@ class _DetailRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
       ],
     );
   }
 }
 
-class _HoursCard extends StatelessWidget {
-  const _HoursCard({
+class _QuotaCard extends StatelessWidget {
+  const _QuotaCard({
     required this.icon,
     required this.label,
-    required this.used,
-    required this.total,
-    required this.remaining,
+    required this.quota,
   });
 
   final IconData icon;
   final String label;
-  final double used;
-  final double total;
-  final double remaining;
+  final double quota;
 
   @override
   Widget build(BuildContext context) {
-    final isUnlimited = total == 0;
-    final progress = isUnlimited ? 0.0 : (used / total).clamp(0.0, 1.0);
-    final remainingText = isUnlimited
+    final isUnlimited = quota == 0;
+    final quotaText = isUnlimited
         ? 'Unlimited'
-        : remaining == double.infinity
-            ? 'Unlimited'
-            : '${remaining.toStringAsFixed(1)} hours left';
+        : '${quota.toStringAsFixed(0)} hours per period';
 
     return Card(
       color: Colors.grey[50],
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 24, color: Colors.blue[700]),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+            Icon(icon, size: 24, color: Colors.blue[700]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
-                Text(
-                  remainingText,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: remaining == 0 && !isUnlimited
-                        ? Colors.red[700]
-                        : Colors.blue[700],
-                  ),
-                ),
-              ],
+              ),
             ),
-            if (!isUnlimited) ...[
-              const SizedBox(height: 12),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  progress >= 1.0 ? Colors.red : Colors.blue,
-                ),
+            Text(
+              quotaText,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue[700],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${used.toStringAsFixed(1)} / ${total.toStringAsFixed(0)} hours used',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ),
     );
   }
 }
-

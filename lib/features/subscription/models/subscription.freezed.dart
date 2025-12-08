@@ -24,22 +24,23 @@ mixin _$Subscription {
   String get id => throw _privateConstructorUsedError;
   String get userId => throw _privateConstructorUsedError;
   String get planId => throw _privateConstructorUsedError;
-  String get planName => throw _privateConstructorUsedError;
   @SubscriptionStatusConverter()
   SubscriptionStatus get status => throw _privateConstructorUsedError;
-  String? get stripeSubscriptionId => throw _privateConstructorUsedError;
+  Billing get billing => throw _privateConstructorUsedError;
+  Quota get effectiveQuota => throw _privateConstructorUsedError;
+  Overrides? get overrides => throw _privateConstructorUsedError;
+  Display get display => throw _privateConstructorUsedError;
   String get stripeCustomerId => throw _privateConstructorUsedError;
-  String? get stripePaymentIntentId => throw _privateConstructorUsedError;
-  bool get renewsAutomatically => throw _privateConstructorUsedError;
+  String? get stripeSubscriptionId => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get currentPeriodStart => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get currentPeriodEnd => throw _privateConstructorUsedError;
   bool get cancelAtPeriodEnd => throw _privateConstructorUsedError;
-  double get deskHours => throw _privateConstructorUsedError;
-  double get meetingRoomHours => throw _privateConstructorUsedError;
-  double get deskHoursUsed => throw _privateConstructorUsedError;
-  double get meetingRoomHoursUsed => throw _privateConstructorUsedError;
+  @NullableTimestampConverter()
+  DateTime? get cancelledAt => throw _privateConstructorUsedError;
+  String? get cancelledBy => throw _privateConstructorUsedError;
+  String? get assignedDeskId => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -66,22 +67,27 @@ abstract class $SubscriptionCopyWith<$Res> {
     String id,
     String userId,
     String planId,
-    String planName,
     @SubscriptionStatusConverter() SubscriptionStatus status,
-    String? stripeSubscriptionId,
+    Billing billing,
+    Quota effectiveQuota,
+    Overrides? overrides,
+    Display display,
     String stripeCustomerId,
-    String? stripePaymentIntentId,
-    bool renewsAutomatically,
+    String? stripeSubscriptionId,
     @TimestampConverter() DateTime currentPeriodStart,
     @TimestampConverter() DateTime currentPeriodEnd,
     bool cancelAtPeriodEnd,
-    double deskHours,
-    double meetingRoomHours,
-    double deskHoursUsed,
-    double meetingRoomHoursUsed,
+    @NullableTimestampConverter() DateTime? cancelledAt,
+    String? cancelledBy,
+    String? assignedDeskId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
+
+  $BillingCopyWith<$Res> get billing;
+  $QuotaCopyWith<$Res> get effectiveQuota;
+  $OverridesCopyWith<$Res>? get overrides;
+  $DisplayCopyWith<$Res> get display;
 }
 
 /// @nodoc
@@ -102,19 +108,19 @@ class _$SubscriptionCopyWithImpl<$Res, $Val extends Subscription>
     Object? id = null,
     Object? userId = null,
     Object? planId = null,
-    Object? planName = null,
     Object? status = null,
-    Object? stripeSubscriptionId = freezed,
+    Object? billing = null,
+    Object? effectiveQuota = null,
+    Object? overrides = freezed,
+    Object? display = null,
     Object? stripeCustomerId = null,
-    Object? stripePaymentIntentId = freezed,
-    Object? renewsAutomatically = null,
+    Object? stripeSubscriptionId = freezed,
     Object? currentPeriodStart = null,
     Object? currentPeriodEnd = null,
     Object? cancelAtPeriodEnd = null,
-    Object? deskHours = null,
-    Object? meetingRoomHours = null,
-    Object? deskHoursUsed = null,
-    Object? meetingRoomHoursUsed = null,
+    Object? cancelledAt = freezed,
+    Object? cancelledBy = freezed,
+    Object? assignedDeskId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -132,30 +138,34 @@ class _$SubscriptionCopyWithImpl<$Res, $Val extends Subscription>
                 ? _value.planId
                 : planId // ignore: cast_nullable_to_non_nullable
                       as String,
-            planName: null == planName
-                ? _value.planName
-                : planName // ignore: cast_nullable_to_non_nullable
-                      as String,
             status: null == status
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                       as SubscriptionStatus,
-            stripeSubscriptionId: freezed == stripeSubscriptionId
-                ? _value.stripeSubscriptionId
-                : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
-                      as String?,
+            billing: null == billing
+                ? _value.billing
+                : billing // ignore: cast_nullable_to_non_nullable
+                      as Billing,
+            effectiveQuota: null == effectiveQuota
+                ? _value.effectiveQuota
+                : effectiveQuota // ignore: cast_nullable_to_non_nullable
+                      as Quota,
+            overrides: freezed == overrides
+                ? _value.overrides
+                : overrides // ignore: cast_nullable_to_non_nullable
+                      as Overrides?,
+            display: null == display
+                ? _value.display
+                : display // ignore: cast_nullable_to_non_nullable
+                      as Display,
             stripeCustomerId: null == stripeCustomerId
                 ? _value.stripeCustomerId
                 : stripeCustomerId // ignore: cast_nullable_to_non_nullable
                       as String,
-            stripePaymentIntentId: freezed == stripePaymentIntentId
-                ? _value.stripePaymentIntentId
-                : stripePaymentIntentId // ignore: cast_nullable_to_non_nullable
+            stripeSubscriptionId: freezed == stripeSubscriptionId
+                ? _value.stripeSubscriptionId
+                : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
                       as String?,
-            renewsAutomatically: null == renewsAutomatically
-                ? _value.renewsAutomatically
-                : renewsAutomatically // ignore: cast_nullable_to_non_nullable
-                      as bool,
             currentPeriodStart: null == currentPeriodStart
                 ? _value.currentPeriodStart
                 : currentPeriodStart // ignore: cast_nullable_to_non_nullable
@@ -168,22 +178,18 @@ class _$SubscriptionCopyWithImpl<$Res, $Val extends Subscription>
                 ? _value.cancelAtPeriodEnd
                 : cancelAtPeriodEnd // ignore: cast_nullable_to_non_nullable
                       as bool,
-            deskHours: null == deskHours
-                ? _value.deskHours
-                : deskHours // ignore: cast_nullable_to_non_nullable
-                      as double,
-            meetingRoomHours: null == meetingRoomHours
-                ? _value.meetingRoomHours
-                : meetingRoomHours // ignore: cast_nullable_to_non_nullable
-                      as double,
-            deskHoursUsed: null == deskHoursUsed
-                ? _value.deskHoursUsed
-                : deskHoursUsed // ignore: cast_nullable_to_non_nullable
-                      as double,
-            meetingRoomHoursUsed: null == meetingRoomHoursUsed
-                ? _value.meetingRoomHoursUsed
-                : meetingRoomHoursUsed // ignore: cast_nullable_to_non_nullable
-                      as double,
+            cancelledAt: freezed == cancelledAt
+                ? _value.cancelledAt
+                : cancelledAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            cancelledBy: freezed == cancelledBy
+                ? _value.cancelledBy
+                : cancelledBy // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            assignedDeskId: freezed == assignedDeskId
+                ? _value.assignedDeskId
+                : assignedDeskId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -195,6 +201,50 @@ class _$SubscriptionCopyWithImpl<$Res, $Val extends Subscription>
           )
           as $Val,
     );
+  }
+
+  /// Create a copy of Subscription
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $BillingCopyWith<$Res> get billing {
+    return $BillingCopyWith<$Res>(_value.billing, (value) {
+      return _then(_value.copyWith(billing: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Subscription
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $QuotaCopyWith<$Res> get effectiveQuota {
+    return $QuotaCopyWith<$Res>(_value.effectiveQuota, (value) {
+      return _then(_value.copyWith(effectiveQuota: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Subscription
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $OverridesCopyWith<$Res>? get overrides {
+    if (_value.overrides == null) {
+      return null;
+    }
+
+    return $OverridesCopyWith<$Res>(_value.overrides!, (value) {
+      return _then(_value.copyWith(overrides: value) as $Val);
+    });
+  }
+
+  /// Create a copy of Subscription
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $DisplayCopyWith<$Res> get display {
+    return $DisplayCopyWith<$Res>(_value.display, (value) {
+      return _then(_value.copyWith(display: value) as $Val);
+    });
   }
 }
 
@@ -211,22 +261,31 @@ abstract class _$$SubscriptionImplCopyWith<$Res>
     String id,
     String userId,
     String planId,
-    String planName,
     @SubscriptionStatusConverter() SubscriptionStatus status,
-    String? stripeSubscriptionId,
+    Billing billing,
+    Quota effectiveQuota,
+    Overrides? overrides,
+    Display display,
     String stripeCustomerId,
-    String? stripePaymentIntentId,
-    bool renewsAutomatically,
+    String? stripeSubscriptionId,
     @TimestampConverter() DateTime currentPeriodStart,
     @TimestampConverter() DateTime currentPeriodEnd,
     bool cancelAtPeriodEnd,
-    double deskHours,
-    double meetingRoomHours,
-    double deskHoursUsed,
-    double meetingRoomHoursUsed,
+    @NullableTimestampConverter() DateTime? cancelledAt,
+    String? cancelledBy,
+    String? assignedDeskId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
+
+  @override
+  $BillingCopyWith<$Res> get billing;
+  @override
+  $QuotaCopyWith<$Res> get effectiveQuota;
+  @override
+  $OverridesCopyWith<$Res>? get overrides;
+  @override
+  $DisplayCopyWith<$Res> get display;
 }
 
 /// @nodoc
@@ -246,19 +305,19 @@ class __$$SubscriptionImplCopyWithImpl<$Res>
     Object? id = null,
     Object? userId = null,
     Object? planId = null,
-    Object? planName = null,
     Object? status = null,
-    Object? stripeSubscriptionId = freezed,
+    Object? billing = null,
+    Object? effectiveQuota = null,
+    Object? overrides = freezed,
+    Object? display = null,
     Object? stripeCustomerId = null,
-    Object? stripePaymentIntentId = freezed,
-    Object? renewsAutomatically = null,
+    Object? stripeSubscriptionId = freezed,
     Object? currentPeriodStart = null,
     Object? currentPeriodEnd = null,
     Object? cancelAtPeriodEnd = null,
-    Object? deskHours = null,
-    Object? meetingRoomHours = null,
-    Object? deskHoursUsed = null,
-    Object? meetingRoomHoursUsed = null,
+    Object? cancelledAt = freezed,
+    Object? cancelledBy = freezed,
+    Object? assignedDeskId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -276,30 +335,34 @@ class __$$SubscriptionImplCopyWithImpl<$Res>
             ? _value.planId
             : planId // ignore: cast_nullable_to_non_nullable
                   as String,
-        planName: null == planName
-            ? _value.planName
-            : planName // ignore: cast_nullable_to_non_nullable
-                  as String,
         status: null == status
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
                   as SubscriptionStatus,
-        stripeSubscriptionId: freezed == stripeSubscriptionId
-            ? _value.stripeSubscriptionId
-            : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
-                  as String?,
+        billing: null == billing
+            ? _value.billing
+            : billing // ignore: cast_nullable_to_non_nullable
+                  as Billing,
+        effectiveQuota: null == effectiveQuota
+            ? _value.effectiveQuota
+            : effectiveQuota // ignore: cast_nullable_to_non_nullable
+                  as Quota,
+        overrides: freezed == overrides
+            ? _value.overrides
+            : overrides // ignore: cast_nullable_to_non_nullable
+                  as Overrides?,
+        display: null == display
+            ? _value.display
+            : display // ignore: cast_nullable_to_non_nullable
+                  as Display,
         stripeCustomerId: null == stripeCustomerId
             ? _value.stripeCustomerId
             : stripeCustomerId // ignore: cast_nullable_to_non_nullable
                   as String,
-        stripePaymentIntentId: freezed == stripePaymentIntentId
-            ? _value.stripePaymentIntentId
-            : stripePaymentIntentId // ignore: cast_nullable_to_non_nullable
+        stripeSubscriptionId: freezed == stripeSubscriptionId
+            ? _value.stripeSubscriptionId
+            : stripeSubscriptionId // ignore: cast_nullable_to_non_nullable
                   as String?,
-        renewsAutomatically: null == renewsAutomatically
-            ? _value.renewsAutomatically
-            : renewsAutomatically // ignore: cast_nullable_to_non_nullable
-                  as bool,
         currentPeriodStart: null == currentPeriodStart
             ? _value.currentPeriodStart
             : currentPeriodStart // ignore: cast_nullable_to_non_nullable
@@ -312,22 +375,18 @@ class __$$SubscriptionImplCopyWithImpl<$Res>
             ? _value.cancelAtPeriodEnd
             : cancelAtPeriodEnd // ignore: cast_nullable_to_non_nullable
                   as bool,
-        deskHours: null == deskHours
-            ? _value.deskHours
-            : deskHours // ignore: cast_nullable_to_non_nullable
-                  as double,
-        meetingRoomHours: null == meetingRoomHours
-            ? _value.meetingRoomHours
-            : meetingRoomHours // ignore: cast_nullable_to_non_nullable
-                  as double,
-        deskHoursUsed: null == deskHoursUsed
-            ? _value.deskHoursUsed
-            : deskHoursUsed // ignore: cast_nullable_to_non_nullable
-                  as double,
-        meetingRoomHoursUsed: null == meetingRoomHoursUsed
-            ? _value.meetingRoomHoursUsed
-            : meetingRoomHoursUsed // ignore: cast_nullable_to_non_nullable
-                  as double,
+        cancelledAt: freezed == cancelledAt
+            ? _value.cancelledAt
+            : cancelledAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        cancelledBy: freezed == cancelledBy
+            ? _value.cancelledBy
+            : cancelledBy // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        assignedDeskId: freezed == assignedDeskId
+            ? _value.assignedDeskId
+            : assignedDeskId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -348,19 +407,19 @@ class _$SubscriptionImpl implements _Subscription {
     required this.id,
     required this.userId,
     required this.planId,
-    required this.planName,
     @SubscriptionStatusConverter() required this.status,
-    this.stripeSubscriptionId,
+    required this.billing,
+    required this.effectiveQuota,
+    this.overrides,
+    required this.display,
     required this.stripeCustomerId,
-    this.stripePaymentIntentId,
-    required this.renewsAutomatically,
+    this.stripeSubscriptionId,
     @TimestampConverter() required this.currentPeriodStart,
     @TimestampConverter() required this.currentPeriodEnd,
     required this.cancelAtPeriodEnd,
-    required this.deskHours,
-    required this.meetingRoomHours,
-    required this.deskHoursUsed,
-    required this.meetingRoomHoursUsed,
+    @NullableTimestampConverter() this.cancelledAt,
+    this.cancelledBy,
+    this.assignedDeskId,
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
   });
@@ -375,18 +434,20 @@ class _$SubscriptionImpl implements _Subscription {
   @override
   final String planId;
   @override
-  final String planName;
-  @override
   @SubscriptionStatusConverter()
   final SubscriptionStatus status;
   @override
-  final String? stripeSubscriptionId;
+  final Billing billing;
+  @override
+  final Quota effectiveQuota;
+  @override
+  final Overrides? overrides;
+  @override
+  final Display display;
   @override
   final String stripeCustomerId;
   @override
-  final String? stripePaymentIntentId;
-  @override
-  final bool renewsAutomatically;
+  final String? stripeSubscriptionId;
   @override
   @TimestampConverter()
   final DateTime currentPeriodStart;
@@ -396,13 +457,12 @@ class _$SubscriptionImpl implements _Subscription {
   @override
   final bool cancelAtPeriodEnd;
   @override
-  final double deskHours;
+  @NullableTimestampConverter()
+  final DateTime? cancelledAt;
   @override
-  final double meetingRoomHours;
+  final String? cancelledBy;
   @override
-  final double deskHoursUsed;
-  @override
-  final double meetingRoomHoursUsed;
+  final String? assignedDeskId;
   @override
   @TimestampConverter()
   final DateTime createdAt;
@@ -412,7 +472,7 @@ class _$SubscriptionImpl implements _Subscription {
 
   @override
   String toString() {
-    return 'Subscription(id: $id, userId: $userId, planId: $planId, planName: $planName, status: $status, stripeSubscriptionId: $stripeSubscriptionId, stripeCustomerId: $stripeCustomerId, stripePaymentIntentId: $stripePaymentIntentId, renewsAutomatically: $renewsAutomatically, currentPeriodStart: $currentPeriodStart, currentPeriodEnd: $currentPeriodEnd, cancelAtPeriodEnd: $cancelAtPeriodEnd, deskHours: $deskHours, meetingRoomHours: $meetingRoomHours, deskHoursUsed: $deskHoursUsed, meetingRoomHoursUsed: $meetingRoomHoursUsed, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Subscription(id: $id, userId: $userId, planId: $planId, status: $status, billing: $billing, effectiveQuota: $effectiveQuota, overrides: $overrides, display: $display, stripeCustomerId: $stripeCustomerId, stripeSubscriptionId: $stripeSubscriptionId, currentPeriodStart: $currentPeriodStart, currentPeriodEnd: $currentPeriodEnd, cancelAtPeriodEnd: $cancelAtPeriodEnd, cancelledAt: $cancelledAt, cancelledBy: $cancelledBy, assignedDeskId: $assignedDeskId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -423,31 +483,29 @@ class _$SubscriptionImpl implements _Subscription {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.planId, planId) || other.planId == planId) &&
-            (identical(other.planName, planName) ||
-                other.planName == planName) &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.stripeSubscriptionId, stripeSubscriptionId) ||
-                other.stripeSubscriptionId == stripeSubscriptionId) &&
+            (identical(other.billing, billing) || other.billing == billing) &&
+            (identical(other.effectiveQuota, effectiveQuota) ||
+                other.effectiveQuota == effectiveQuota) &&
+            (identical(other.overrides, overrides) ||
+                other.overrides == overrides) &&
+            (identical(other.display, display) || other.display == display) &&
             (identical(other.stripeCustomerId, stripeCustomerId) ||
                 other.stripeCustomerId == stripeCustomerId) &&
-            (identical(other.stripePaymentIntentId, stripePaymentIntentId) ||
-                other.stripePaymentIntentId == stripePaymentIntentId) &&
-            (identical(other.renewsAutomatically, renewsAutomatically) ||
-                other.renewsAutomatically == renewsAutomatically) &&
+            (identical(other.stripeSubscriptionId, stripeSubscriptionId) ||
+                other.stripeSubscriptionId == stripeSubscriptionId) &&
             (identical(other.currentPeriodStart, currentPeriodStart) ||
                 other.currentPeriodStart == currentPeriodStart) &&
             (identical(other.currentPeriodEnd, currentPeriodEnd) ||
                 other.currentPeriodEnd == currentPeriodEnd) &&
             (identical(other.cancelAtPeriodEnd, cancelAtPeriodEnd) ||
                 other.cancelAtPeriodEnd == cancelAtPeriodEnd) &&
-            (identical(other.deskHours, deskHours) ||
-                other.deskHours == deskHours) &&
-            (identical(other.meetingRoomHours, meetingRoomHours) ||
-                other.meetingRoomHours == meetingRoomHours) &&
-            (identical(other.deskHoursUsed, deskHoursUsed) ||
-                other.deskHoursUsed == deskHoursUsed) &&
-            (identical(other.meetingRoomHoursUsed, meetingRoomHoursUsed) ||
-                other.meetingRoomHoursUsed == meetingRoomHoursUsed) &&
+            (identical(other.cancelledAt, cancelledAt) ||
+                other.cancelledAt == cancelledAt) &&
+            (identical(other.cancelledBy, cancelledBy) ||
+                other.cancelledBy == cancelledBy) &&
+            (identical(other.assignedDeskId, assignedDeskId) ||
+                other.assignedDeskId == assignedDeskId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -461,19 +519,19 @@ class _$SubscriptionImpl implements _Subscription {
     id,
     userId,
     planId,
-    planName,
     status,
-    stripeSubscriptionId,
+    billing,
+    effectiveQuota,
+    overrides,
+    display,
     stripeCustomerId,
-    stripePaymentIntentId,
-    renewsAutomatically,
+    stripeSubscriptionId,
     currentPeriodStart,
     currentPeriodEnd,
     cancelAtPeriodEnd,
-    deskHours,
-    meetingRoomHours,
-    deskHoursUsed,
-    meetingRoomHoursUsed,
+    cancelledAt,
+    cancelledBy,
+    assignedDeskId,
     createdAt,
     updatedAt,
   );
@@ -497,19 +555,19 @@ abstract class _Subscription implements Subscription {
     required final String id,
     required final String userId,
     required final String planId,
-    required final String planName,
     @SubscriptionStatusConverter() required final SubscriptionStatus status,
-    final String? stripeSubscriptionId,
+    required final Billing billing,
+    required final Quota effectiveQuota,
+    final Overrides? overrides,
+    required final Display display,
     required final String stripeCustomerId,
-    final String? stripePaymentIntentId,
-    required final bool renewsAutomatically,
+    final String? stripeSubscriptionId,
     @TimestampConverter() required final DateTime currentPeriodStart,
     @TimestampConverter() required final DateTime currentPeriodEnd,
     required final bool cancelAtPeriodEnd,
-    required final double deskHours,
-    required final double meetingRoomHours,
-    required final double deskHoursUsed,
-    required final double meetingRoomHoursUsed,
+    @NullableTimestampConverter() final DateTime? cancelledAt,
+    final String? cancelledBy,
+    final String? assignedDeskId,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
   }) = _$SubscriptionImpl;
@@ -524,18 +582,20 @@ abstract class _Subscription implements Subscription {
   @override
   String get planId;
   @override
-  String get planName;
-  @override
   @SubscriptionStatusConverter()
   SubscriptionStatus get status;
   @override
-  String? get stripeSubscriptionId;
+  Billing get billing;
+  @override
+  Quota get effectiveQuota;
+  @override
+  Overrides? get overrides;
+  @override
+  Display get display;
   @override
   String get stripeCustomerId;
   @override
-  String? get stripePaymentIntentId;
-  @override
-  bool get renewsAutomatically;
+  String? get stripeSubscriptionId;
   @override
   @TimestampConverter()
   DateTime get currentPeriodStart;
@@ -545,13 +605,12 @@ abstract class _Subscription implements Subscription {
   @override
   bool get cancelAtPeriodEnd;
   @override
-  double get deskHours;
+  @NullableTimestampConverter()
+  DateTime? get cancelledAt;
   @override
-  double get meetingRoomHours;
+  String? get cancelledBy;
   @override
-  double get deskHoursUsed;
-  @override
-  double get meetingRoomHoursUsed;
+  String? get assignedDeskId;
   @override
   @TimestampConverter()
   DateTime get createdAt;

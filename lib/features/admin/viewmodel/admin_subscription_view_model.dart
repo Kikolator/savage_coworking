@@ -88,7 +88,7 @@ class AdminSubscriptionViewModel
           ? subscriptions.where((item) {
               final query = state.filters.searchQuery!.toLowerCase();
               return item.displayName.toLowerCase().contains(query) ||
-                  item.subscription.planName.toLowerCase().contains(query) ||
+                  item.subscription.display.planName.toLowerCase().contains(query) ||
                   item.userEmail?.toLowerCase().contains(query) == true;
             }).toList()
           : subscriptions;

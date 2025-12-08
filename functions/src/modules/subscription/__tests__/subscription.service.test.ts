@@ -3,7 +3,6 @@ import {Timestamp} from "firebase-admin/firestore";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
   ActiveSubscriptionExistsError,
-  HoursExceededError,
   InvalidStatusTransitionError,
   PlanNameTakenError,
   PlanNotFoundError,
@@ -21,7 +20,6 @@ import {
   getSubscriptionsByUserId,
   updatePlan,
   updateSubscription,
-  updateSubscriptionHours,
 } from "../subscription.service";
 import * as subscriptionRepo from "../subscription.repository";
 import {
@@ -55,14 +53,32 @@ describe("subscription.service", () => {
   const fakePlan: SubscriptionPlan = {
     id: "plan-1",
     name: "Basic Plan",
-    price: 2999,
-    currency: "usd",
-    interval: "month",
-    deskHours: 40,
-    meetingRoomHours: 10,
+    category: "explore",
+    billing: {
+      type: "recurring",
+      period: "month",
+      intervalCount: 1,
+    },
+    quota: {
+      deskHoursPerPeriod: 40,
+      meetingHoursPerPeriod: 10,
+      access: {
+        type: "business",
+        startTime: "09:00",
+        endTime: "18:00",
+      },
+    },
+    pricing: {
+      currency: "usd",
+      amount: 2999,
+      billingDescription: "$29.99/month",
+    },
+    external: {
+      stripeProductId: "prod_123",
+      stripePriceId: "price_123",
+    },
     features: ["40 desk hours", "10 meeting room hours"],
     isActive: true,
-    stripePriceId: "price_123",
     createdAt: fakeTimestamp,
     updatedAt: fakeTimestamp,
   };
@@ -71,18 +87,31 @@ describe("subscription.service", () => {
     id: "sub-1",
     userId: "user-1",
     planId: "plan-1",
-    planName: "Basic Plan",
     status: "active",
     stripeCustomerId: "cus_123",
     stripeSubscriptionId: "sub_123",
-    renewsAutomatically: true,
     currentPeriodStart: fakeTimestamp,
     currentPeriodEnd: Timestamp.fromMillis(1_700_000_000_000 + 86400000 * 30),
     cancelAtPeriodEnd: false,
-    deskHours: 40,
-    meetingRoomHours: 10,
-    deskHoursUsed: 0,
-    meetingRoomHoursUsed: 0,
+    billing: {
+      type: "recurring",
+      period: "month",
+      intervalCount: 1,
+    },
+    effectiveQuota: {
+      deskHoursPerPeriod: 40,
+      meetingHoursPerPeriod: 10,
+      access: {
+        type: "business",
+        startTime: "09:00",
+        endTime: "18:00",
+      },
+    },
+    display: {
+      planName: "Basic Plan",
+      priceAmount: 2999,
+      priceCurrency: "usd",
+    },
     createdAt: fakeTimestamp,
     updatedAt: fakeTimestamp,
   };
@@ -125,32 +154,8 @@ describe("subscription.service", () => {
       expect(result).toEqual(fakeSubscription);
     });
 
-    it("creates a subscription successfully for one-off plan", async () => {
-      const oneOffPlan: SubscriptionPlan = {
-        ...fakePlan,
-        interval: "one_off",
-        stripeProductId: "prod_123",
-      };
-      const oneOffDto: SubscriptionCreateDto = {
-        ...createDto,
-        stripePaymentIntentId: "pi_123",
-        stripeSubscriptionId: undefined,
-      };
-      const oneOffSubscription: Subscription = {
-        ...fakeSubscription,
-        renewsAutomatically: false,
-        stripePaymentIntentId: "pi_123",
-        stripeSubscriptionId: undefined,
-      };
-
-      repoMock.findPlanById.mockResolvedValue(oneOffPlan);
-      repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
-      repoMock.createSubscription.mockResolvedValue(oneOffSubscription);
-
-      const result = await createSubscription(oneOffDto);
-
-      expect(result).toEqual(oneOffSubscription);
-    });
+    // Note: One-off plans now create PassBundles, not Subscriptions
+    // This test is no longer applicable for subscriptions
 
     it("throws PlanNotFoundError when plan does not exist", async () => {
       repoMock.findPlanById.mockResolvedValue(null);
@@ -184,7 +189,7 @@ describe("subscription.service", () => {
     );
 
     it(
-      "throws error when monthly plan missing stripeSubscriptionId",
+      "throws error when recurring plan missing stripeSubscriptionId",
       async () => {
         const dtoWithoutStripe = {
           ...createDto,
@@ -200,24 +205,21 @@ describe("subscription.service", () => {
     );
 
     it(
-      "throws error when one-off plan missing stripePaymentIntentId",
+      "throws error when plan is not recurring",
       async () => {
         const oneOffPlan: SubscriptionPlan = {
           ...fakePlan,
-          interval: "one_off",
-        };
-        const dtoWithoutPaymentIntent: SubscriptionCreateDto = {
-          ...createDto,
-          stripePaymentIntentId: undefined,
-          stripeSubscriptionId: undefined,
+          billing: {
+            type: "oneOff",
+          },
         };
 
         repoMock.findPlanById.mockResolvedValue(oneOffPlan);
         repoMock.findActiveSubscriptionByUserId.mockResolvedValue(null);
 
-        await expect(
-          createSubscription(dtoWithoutPaymentIntent),
-        ).rejects.toThrow("STRIPE_PAYMENT_INTENT_ID_REQUIRED_FOR_ONE_OFF");
+        await expect(createSubscription(createDto)).rejects.toThrow(
+          "ONLY_RECURRING_PLANS_CAN_CREATE_SUBSCRIPTIONS",
+        );
       },
     );
   });
@@ -338,28 +340,7 @@ describe("subscription.service", () => {
       expect(result.status).toBe("active");
     });
 
-    it("validates hours usage on update", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(fakeSubscription);
-
-      await expect(
-        updateSubscription("sub-1", {deskHoursUsed: 50}),
-      ).rejects.toThrow(HoursExceededError);
-    });
-
-    it("allows unlimited hours (0 = unlimited)", async () => {
-      const unlimitedPlan = {...fakeSubscription, deskHours: 0};
-      const updated = {...unlimitedPlan, deskHoursUsed: 1000};
-      repoMock.findSubscriptionById
-        .mockResolvedValueOnce(unlimitedPlan)
-        .mockResolvedValueOnce(updated);
-      repoMock.updateSubscription.mockResolvedValue(updated);
-
-      const result = await updateSubscription("sub-1", {
-        deskHoursUsed: 1000,
-      });
-
-      expect(result.deskHoursUsed).toBe(1000);
-    });
+    // Note: Hours usage validation is now handled in Usage collection, not subscriptions
   });
 
   describe("cancelSubscription", () => {
@@ -410,54 +391,7 @@ describe("subscription.service", () => {
     );
   });
 
-  describe("updateSubscriptionHours", () => {
-    it("updates hours successfully within limits", async () => {
-      const updated = {
-        ...fakeSubscription,
-        deskHoursUsed: 20,
-        meetingRoomHoursUsed: 5,
-      };
-      repoMock.findSubscriptionById
-        .mockResolvedValueOnce(fakeSubscription)
-        .mockResolvedValueOnce(updated);
-      repoMock.updateSubscription.mockResolvedValue(updated);
-
-      const result = await updateSubscriptionHours("sub-1", 20, 5);
-
-      expect(repoMock.updateSubscription).toHaveBeenCalledWith("sub-1", {
-        deskHoursUsed: 20,
-        meetingRoomHoursUsed: 5,
-      });
-      expect(result.deskHoursUsed).toBe(20);
-      expect(result.meetingRoomHoursUsed).toBe(5);
-    });
-
-    it("throws HoursExceededError for desk hours", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(fakeSubscription);
-
-      await expect(
-        updateSubscriptionHours("sub-1", 50, 5),
-      ).rejects.toThrow(HoursExceededError);
-    });
-
-    it("throws HoursExceededError for meeting room hours", async () => {
-      repoMock.findSubscriptionById.mockResolvedValue(fakeSubscription);
-
-      await expect(
-        updateSubscriptionHours("sub-1", 20, 15),
-      ).rejects.toThrow(HoursExceededError);
-    });
-
-    it(
-      "throws SubscriptionNotFoundError when subscription not found",
-      async () => {
-        repoMock.findSubscriptionById.mockResolvedValue(null);
-
-        await expect(updateSubscriptionHours("sub-1", 20, 5)).rejects
-          .toThrow(SubscriptionNotFoundError);
-      },
-    );
-  });
+  // Note: updateSubscriptionHours has been removed - hours are now tracked in Usage collection
 
   describe("deleteSubscription", () => {
     it("deletes subscription successfully", async () => {
@@ -485,14 +419,32 @@ describe("subscription.service", () => {
   describe("createPlan", () => {
     const planDto: SubscriptionPlanCreateDto = {
       name: "New Plan",
-      price: 4999,
-      currency: "usd",
-      interval: "month",
-      deskHours: 80,
-      meetingRoomHours: 20,
+      category: "explore",
+      billing: {
+        type: "recurring",
+        period: "month",
+        intervalCount: 1,
+      },
+      quota: {
+        deskHoursPerPeriod: 80,
+        meetingHoursPerPeriod: 20,
+        access: {
+          type: "business",
+          startTime: "09:00",
+          endTime: "18:00",
+        },
+      },
+      pricing: {
+        currency: "usd",
+        amount: 4999,
+        billingDescription: "$49.99/month",
+      },
       features: ["80 desk hours", "20 meeting room hours"],
       isActive: true,
-      stripePriceId: "price_456",
+      external: {
+        stripeProductId: "prod_456",
+        stripePriceId: "price_456",
+      },
     };
 
     it("creates a plan successfully", async () => {
@@ -518,26 +470,8 @@ describe("subscription.service", () => {
         .toThrow(PlanNameTakenError);
     });
 
-    it("throws error when monthly plan missing stripePriceId", async () => {
-      repoMock.findAllPlans.mockResolvedValue([]);
-
-      await expect(
-        createPlan({...planDto, stripePriceId: undefined}),
-      ).rejects.toThrow("STRIPE_PRICE_ID_REQUIRED_FOR_RECURRING");
-    });
-
-    it("throws error when one-off plan missing stripeProductId", async () => {
-      repoMock.findAllPlans.mockResolvedValue([]);
-
-      await expect(
-        createPlan({
-          ...planDto,
-          interval: "one_off",
-          stripePriceId: undefined,
-          stripeProductId: undefined,
-        }),
-      ).rejects.toThrow("STRIPE_PRODUCT_ID_REQUIRED_FOR_ONE_OFF");
-    });
+    // Note: Stripe IDs are now auto-created by the service if not provided
+    // These validation tests are no longer applicable
   });
 
   describe("getPlan", () => {
@@ -585,27 +519,43 @@ describe("subscription.service", () => {
 
   describe("updatePlan", () => {
     it("updates plan successfully", async () => {
-      const updated = {...fakePlan, price: 3999};
+      const updated = {
+        ...fakePlan,
+        pricing: {
+          ...fakePlan.pricing,
+          amount: 3999,
+          billingDescription: "$39.99/month",
+        },
+      };
       repoMock.findPlanById
         .mockResolvedValueOnce(fakePlan)
         .mockResolvedValueOnce(updated);
       repoMock.findAllPlans.mockResolvedValue([fakePlan]);
       repoMock.updatePlan.mockResolvedValue(updated);
 
-      const result = await updatePlan("plan-1", {price: 3999});
-
-      expect(repoMock.updatePlan).toHaveBeenCalledWith("plan-1", {
-        price: 3999,
+      const result = await updatePlan("plan-1", {
+        pricing: {
+          currency: "usd",
+          amount: 3999,
+          billingDescription: "$39.99/month",
+        },
       });
-      expect(result.price).toBe(3999);
+
+      expect(result.pricing.amount).toBe(3999);
     });
 
     it("throws PlanNotFoundError when plan not found", async () => {
       repoMock.findPlanById.mockResolvedValue(null);
 
-      await expect(updatePlan("plan-1", {price: 3999})).rejects.toThrow(
-        PlanNotFoundError,
-      );
+      await expect(
+        updatePlan("plan-1", {
+          pricing: {
+            currency: "usd",
+            amount: 3999,
+            billingDescription: "$39.99/month",
+          },
+        }),
+      ).rejects.toThrow(PlanNotFoundError);
     });
 
     it("throws PlanNameTakenError when name already exists", async () => {

@@ -314,5 +314,373 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
     }
+
+    // ============================================================================
+    // New Subscription Model Rules
+    // ============================================================================
+
+    // Validation functions for new models
+    function isValidPlanCategory(category) {
+      return category in ['dayPass', 'explore', 'nomad', 'fix'];
+    }
+
+    function isValidBillingType(type) {
+      return type in ['oneOff', 'recurring'];
+    }
+
+    function isValidBillingPeriod(period) {
+      return period in ['day', 'month'];
+    }
+
+    function isValidAccessType(type) {
+      return type in ['business', '24_7'];
+    }
+
+    function isValidSeatType(type) {
+      return type in ['hot', 'fixed'];
+    }
+
+    function isValidPassBundleStatus(status) {
+      return status in ['active', 'consumed', 'expired', 'cancelled'];
+    }
+
+    function isValidBookingType(type) {
+      return type in ['desk', 'meetingRoom'];
+    }
+
+    function isValidBookingStatus(status) {
+      return status in ['booked', 'checkedIn', 'completed', 'cancelled'];
+    }
+
+    function isValidBookingKind(kind) {
+      return kind in ['subscription', 'passBundle'];
+    }
+
+    function isValidTimeFormat(time) {
+      // Validate HH:mm format
+      return time is string
+        && time.size() == 5
+        && time.matches('^[0-9]{2}:[0-9]{2}$');
+    }
+
+    function isValidDateString(date) {
+      // Validate YYYY-MM-DD format
+      return date is string
+        && date.size() == 10
+        && date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function isValidAllowedDaysOfWeek(days) {
+      // Array of integers 0-6 (Sunday=0, Saturday=6)
+      // Check each element is between 0 and 6
+      return days is list
+        && days.size() <= 7
+        && (days.size() == 0 || (days[0] >= 0 && days[0] <= 6));
+    }
+
+    function hasValidBilling(data) {
+      return data.type is string
+        && isValidBillingType(data.type)
+        && (data.type == 'oneOff' || (data.type == 'recurring' && data.period is string && isValidBillingPeriod(data.period)))
+        && (!('intervalCount' in data) || (data.intervalCount is int && data.intervalCount > 0));
+    }
+
+    function hasValidAccess(data) {
+      return data.type is string
+        && isValidAccessType(data.type)
+        && (!('allowedDaysOfWeek' in data) || isValidAllowedDaysOfWeek(data.allowedDaysOfWeek))
+        && (!('startTime' in data) || isValidTimeFormat(data.startTime))
+        && (!('endTime' in data) || isValidTimeFormat(data.endTime));
+    }
+
+    function hasValidQuota(data) {
+      return hasValidAccess(data.access)
+        && (!('dayPassCredits' in data) || (data.dayPassCredits is int && data.dayPassCredits > 0))
+        && (!('deskHoursPerPeriod' in data) || (data.deskHoursPerPeriod is number && data.deskHoursPerPeriod >= 0))
+        && (!('meetingHoursPerPeriod' in data) || (data.meetingHoursPerPeriod is number && data.meetingHoursPerPeriod >= 0))
+        && (!('seatType' in data) || (data.seatType is string && isValidSeatType(data.seatType)));
+    }
+
+    function hasValidPricing(data) {
+      return data.currency is string
+        && data.currency.size() == 3
+        && data.amount is int
+        && data.amount > 0
+        && data.billingDescription is string;
+    }
+
+    function hasValidExternal(data) {
+      return (!('stripeProductId' in data) || data.stripeProductId is string || data.stripeProductId == null)
+        && (!('stripePriceId' in data) || data.stripePriceId is string || data.stripePriceId == null);
+    }
+
+    function hasValidSubscriptionPlanCoreFields(data) {
+      return data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.category is string
+        && isValidPlanCategory(data.category)
+        && hasValidBilling(data.billing)
+        && hasValidQuota(data.quota)
+        && hasValidPricing(data.pricing)
+        && (!('external' in data) || hasValidExternal(data.external))
+        && data.features is list
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validSubscriptionPlanCreate(data) {
+      return hasValidSubscriptionPlanCoreFields(data)
+        && data.createdAt == data.updatedAt;
+    }
+
+    function validSubscriptionPlanUpdate(oldData, newData) {
+      return newData.updatedAt >= request.time - duration.value(1, 'm')
+        && (!('name' in newData) || (newData.name is string && newData.name.size() > 0 && newData.name.size() <= 100))
+        && (!('category' in newData) || (newData.category is string && isValidPlanCategory(newData.category)))
+        && (!('billing' in newData) || hasValidBilling(newData.billing))
+        && (!('quota' in newData) || hasValidQuota(newData.quota))
+        && (!('pricing' in newData) || hasValidPricing(newData.pricing))
+        && (!('external' in newData) || hasValidExternal(newData.external))
+        && (!('features' in newData) || newData.features is list)
+        && (!('isActive' in newData) || newData.isActive is bool)
+        && (!('createdAt' in newData) || newData.createdAt == oldData.createdAt);
+    }
+
+    function hasValidSubscriptionCoreFields(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.status is string
+        && isValidSubscriptionStatus(data.status)
+        && hasValidBilling(data.billing)
+        && hasValidQuota(data.effectiveQuota)
+        && hasValidPricing(data.display)
+        && data.stripeCustomerId is string
+        && data.currentPeriodStart is timestamp
+        && data.currentPeriodEnd is timestamp
+        && data.cancelAtPeriodEnd is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.currentPeriodEnd.toMillis() > data.currentPeriodStart.toMillis();
+    }
+
+    function hasValidSubscriptionOptionals(data) {
+      return (!('stripeSubscriptionId' in data) || data.stripeSubscriptionId is string)
+        && (!('overrides' in data) || (data.overrides is map && (!('deskHoursPerPeriod' in data.overrides) || (data.overrides.deskHoursPerPeriod is number && data.overrides.deskHoursPerPeriod >= 0)) && (!('meetingHoursPerPeriod' in data.overrides) || (data.overrides.meetingHoursPerPeriod is number && data.overrides.meetingHoursPerPeriod >= 0))))
+        && (!('cancelledAt' in data) || data.cancelledAt is timestamp)
+        && (!('cancelledBy' in data) || data.cancelledBy is string)
+        && (!('assignedDeskId' in data) || data.assignedDeskId is string);
+    }
+
+    function validSubscriptionCreate(data) {
+      return hasValidSubscriptionCoreFields(data)
+        && hasValidSubscriptionOptionals(data)
+        && data.createdAt == data.updatedAt
+        && data.billing.type == 'recurring'
+        && (!('stripeSubscriptionId' in data) || data.stripeSubscriptionId is string);
+    }
+
+    function immutableSubscriptionFields(oldData, newData) {
+      return newData.userId == oldData.userId
+        && newData.planId == oldData.planId
+        && newData.createdAt == oldData.createdAt;
+    }
+
+    function validSubscriptionUpdate(oldData, newData) {
+      return hasValidSubscriptionCoreFields(newData)
+        && hasValidSubscriptionOptionals(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
+        && immutableSubscriptionFields(oldData, newData)
+        && (isAdmin() || validSubscriptionTransition(oldData.status, newData.status))
+        && (!('overrides' in newData) || isAdmin()); // Only admins can set overrides
+    }
+
+    function hasValidPassBundleCoreFields(data) {
+      return data.userId is string
+        && data.planId is string
+        && data.status is string
+        && isValidPassBundleStatus(data.status)
+        && data.totalCredits is int
+        && data.totalCredits > 0
+        && data.remainingCredits is int
+        && data.remainingCredits >= 0
+        && data.remainingCredits <= data.totalCredits
+        && data.validFrom is timestamp
+        && (!('validUntil' in data) || (data.validUntil is timestamp && data.validUntil.toMillis() > data.validFrom.toMillis()))
+        && hasValidAccess(data.access)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validPassBundleCreate(data) {
+      return hasValidPassBundleCoreFields(data)
+        && data.createdAt == data.updatedAt;
+    }
+
+    function validPassBundleUpdate(oldData, newData) {
+      return hasValidPassBundleCoreFields(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
+        && newData.userId == oldData.userId
+        && newData.planId == oldData.planId
+        && newData.createdAt == oldData.createdAt
+        && (!('status' in newData) || isValidPassBundleStatus(newData.status))
+        && (!('remainingCredits' in newData) || (newData.remainingCredits is int && newData.remainingCredits >= 0 && newData.remainingCredits <= newData.totalCredits));
+    }
+
+    function hasValidUsageCoreFields(data) {
+      return data.userId is string
+        && (data.subscriptionId is string || data.passBundleId is string)
+        && !(data.subscriptionId is string && data.passBundleId is string) // Exactly one must be set
+        && data.periodStart is timestamp
+        && data.periodEnd is timestamp
+        && data.periodEnd.toMillis() > data.periodStart.toMillis()
+        && data.deskMinutesUsed is int
+        && data.deskMinutesUsed >= 0
+        && data.meetingMinutesUsed is int
+        && data.meetingMinutesUsed >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function hasValidBreakdown(data) {
+      return data.date is string
+        && isValidDateString(data.date)
+        && data.deskMinutes is int
+        && data.deskMinutes >= 0
+        && data.meetingMinutes is int
+        && data.meetingMinutes >= 0
+        && data.dayPassUsed is int
+        && data.dayPassUsed >= 0;
+    }
+
+    function validUsageCreate(data) {
+      return hasValidUsageCoreFields(data)
+        && data.createdAt == data.updatedAt
+        && (!('breakdown' in data) || (data.breakdown is map));
+    }
+
+    function validUsageUpdate(oldData, newData) {
+      return hasValidUsageCoreFields(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
+        && newData.userId == oldData.userId
+        && newData.subscriptionId == oldData.subscriptionId
+        && newData.passBundleId == oldData.passBundleId
+        && newData.periodStart == oldData.periodStart
+        && newData.periodEnd == oldData.periodEnd
+        && newData.createdAt == oldData.createdAt
+        && (!('breakdown' in newData) || (newData.breakdown is map));
+    }
+
+    function hasValidBookingSource(data) {
+      return data.kind is string
+        && isValidBookingKind(data.kind)
+        && ((data.kind == 'subscription' && data.subscriptionId is string && !('passBundleId' in data))
+          || (data.kind == 'passBundle' && data.passBundleId is string && !('subscriptionId' in data)));
+    }
+
+    function hasValidBookingCoreFields(data) {
+      return data.userId is string
+        && data.type is string
+        && isValidBookingType(data.type)
+        && data.date is string
+        && isValidDateString(data.date)
+        && data.startTime is string
+        && isValidTimeFormat(data.startTime)
+        && data.endTime is string
+        && isValidTimeFormat(data.endTime)
+        && hasValidBookingSource(data.source)
+        && data.status is string
+        && isValidBookingStatus(data.status)
+        && data.workspaceId is string
+        && ((data.type == 'desk' && data.deskId is string && !('roomId' in data))
+          || (data.type == 'meetingRoom' && data.roomId is string && !('deskId' in data)))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validBookingCreate(data) {
+      return hasValidBookingCoreFields(data)
+        && data.createdAt == data.updatedAt
+        && data.status == 'booked';
+    }
+
+    function validBookingUpdate(oldData, newData) {
+      return hasValidBookingCoreFields(newData)
+        && newData.updatedAt >= request.time - duration.value(1, 'm')
+        && newData.userId == oldData.userId
+        && newData.type == oldData.type
+        && newData.date == oldData.date
+        && newData.startTime == oldData.startTime
+        && newData.endTime == oldData.endTime
+        && newData.source == oldData.source
+        && newData.workspaceId == oldData.workspaceId
+        && newData.createdAt == oldData.createdAt
+        && (!('status' in newData) || isValidBookingStatus(newData.status));
+    }
+
+    function hasValidMembershipSummary(data) {
+      return (!('activeSubscriptionId' in data) || data.activeSubscriptionId is string)
+        && (!('planId' in data) || data.planId is string)
+        && (!('planName' in data) || data.planName is string)
+        && (!('status' in data) || (data.status is string && isValidSubscriptionStatus(data.status)))
+        && (!('currentPeriodEnd' in data) || data.currentPeriodEnd is timestamp)
+        && (!('deskMinutesRemaining' in data) || (data.deskMinutesRemaining is int && data.deskMinutesRemaining >= 0) || data.deskMinutesRemaining == null)
+        && (!('meetingMinutesRemaining' in data) || (data.meetingMinutesRemaining is int && data.meetingMinutesRemaining >= 0) || data.meetingMinutesRemaining == null)
+        && (!('remainingDayPassCredits' in data) || (data.remainingDayPassCredits is int && data.remainingDayPassCredits >= 0))
+        && (!('access' in data) || (data.access is string && isValidAccessType(data.access)));
+    }
+
+    // New Subscription Plans collection (updated structure)
+    match /subscriptionPlans/{planId} {
+      allow read: if signedIn();
+      allow create: if isAdmin() && validSubscriptionPlanCreate(request.resource.data);
+      allow update: if isAdmin() && validSubscriptionPlanUpdate(resource.data, request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Subscriptions collection (updated structure - recurring only)
+    match /subscriptions/{subscriptionId} {
+      allow read: if signedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if signedIn() && (isOwner(request.resource.data.userId) || isAdmin()) && validSubscriptionCreate(request.resource.data);
+      allow update: if signedIn() && (isAdmin() || isOwner(resource.data.userId)) && validSubscriptionUpdate(resource.data, request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Pass Bundles collection
+    match /passBundles/{bundleId} {
+      allow read: if signedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if signedIn() && (isOwner(request.resource.data.userId) || isAdmin()) && validPassBundleCreate(request.resource.data);
+      allow update: if signedIn() && (isAdmin() || isOwner(resource.data.userId)) && validPassBundleUpdate(resource.data, request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Usage collection
+    match /usage/{usageId} {
+      allow read: if signedIn() && (isOwner(resource.data.userId) || isAdmin());
+      // Only backend/Cloud Functions can create/update usage (users cannot)
+      allow create: if false; // Enforced by backend only
+      allow update: if false; // Enforced by backend only
+      allow delete: if isAdmin();
+    }
+
+    // Bookings collection (new structure)
+    match /bookings/{bookingId} {
+      allow read: if signedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if signedIn() && (isOwner(request.resource.data.userId) || isAdmin()) && validBookingCreate(request.resource.data);
+      allow update: if signedIn() && (isAdmin() || isOwner(resource.data.userId)) && validBookingUpdate(resource.data, request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Users collection (updated to allow MembershipSummary)
+    match /users/{uid} {
+      allow write: if signedIn() && (isOwner(uid) || isAdmin());
+      allow read: if signedIn() && (isOwner(uid) || isAdmin());
+      // Validate membership summary if present
+      function validateUserUpdate() {
+        return !('membership' in request.resource.data) || hasValidMembershipSummary(request.resource.data.membership);
+      }
+      allow update: if validateUserUpdate();
+    }
   }
 }

@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../providers/admin_subscription_providers.dart';
 import '../../../../models/admin_subscription_models.dart';
 import '../../../../../subscription/models/subscription_interval.dart';
+import '../../../../../subscription/models/billing_type.dart';
+import '../../../../../subscription/models/billing_period.dart';
+import '../../../../../subscription/models/plan_category.dart';
+import '../../../../../subscription/models/access_type.dart';
 
 class AdminPlanFormDialog extends ConsumerStatefulWidget {
   const AdminPlanFormDialog({super.key});
@@ -35,21 +39,27 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
     _isEditing = plan != null;
     _nameController = TextEditingController(text: plan?.name ?? '');
     _priceController = TextEditingController(
-      text: plan != null ? (plan.price / 100).toStringAsFixed(2) : '',
+      text: plan != null ? (plan.pricing.amount / 100).toStringAsFixed(2) : '',
     );
     _deskHoursController = TextEditingController(
-      text: plan?.deskHours.toString() ?? '0',
+      text: plan?.quota.deskHoursPerPeriod?.toString() ?? '0',
     );
     _meetingRoomHoursController = TextEditingController(
-      text: plan?.meetingRoomHours.toString() ?? '0',
+      text: plan?.quota.meetingHoursPerPeriod?.toString() ?? '0',
     );
     _featuresController = TextEditingController(
       text: plan?.features.join('\n') ?? '',
     );
 
     if (plan != null) {
-      _interval = plan.interval;
-      _currency = plan.currency;
+      // Map billing to interval for backward compatibility
+      if (plan.billing.type == BillingType.recurring &&
+          plan.billing.period == BillingPeriod.month) {
+        _interval = SubscriptionInterval.month;
+      } else {
+        _interval = SubscriptionInterval.oneOff;
+      }
+      _currency = plan.pricing.currency;
       _isActive = plan.isActive;
     }
   }
@@ -79,14 +89,25 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
         .where((f) => f.trim().isNotEmpty)
         .toList();
 
+    // Map interval to billing type/period for new model
+    final billingType = _interval == SubscriptionInterval.month
+        ? BillingType.recurring
+        : BillingType.oneOff;
+    final billingPeriod = _interval == SubscriptionInterval.month
+        ? BillingPeriod.month
+        : null;
+
     final formData = AdminPlanFormData(
       id: state.selectedPlan?.id,
       name: _nameController.text.trim(),
+      category: state.selectedPlan?.category ?? PlanCategory.explore,
+      billingType: billingType,
+      billingPeriod: billingPeriod,
       price: priceInCents,
       currency: _currency,
-      interval: _interval,
       deskHours: deskHours,
       meetingRoomHours: meetingRoomHours,
+      accessType: state.selectedPlan?.quota.access.type ?? AccessType.business,
       features: features,
       isActive: _isActive,
     );
@@ -164,8 +185,8 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                               ),
                               keyboardType:
                                   const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                                    decimal: true,
+                                  ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Price is required';
@@ -186,9 +207,18 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                                 labelText: 'Currency',
                               ),
                               items: const [
-                                DropdownMenuItem(value: 'usd', child: Text('USD')),
-                                DropdownMenuItem(value: 'eur', child: Text('EUR')),
-                                DropdownMenuItem(value: 'gbp', child: Text('GBP')),
+                                DropdownMenuItem(
+                                  value: 'usd',
+                                  child: Text('USD'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'eur',
+                                  child: Text('EUR'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'gbp',
+                                  child: Text('GBP'),
+                                ),
                               ],
                               onChanged: (value) {
                                 if (value != null) {
@@ -219,9 +249,10 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                           ),
                         ],
                         selected: {_interval},
-                        onSelectionChanged: (Set<SubscriptionInterval> selected) {
-                          setState(() => _interval = selected.first);
-                        },
+                        onSelectionChanged:
+                            (Set<SubscriptionInterval> selected) {
+                              setState(() => _interval = selected.first);
+                            },
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -234,9 +265,10 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                                 hintText: '0 = unlimited',
                                 helperText: 'Enter 0 for unlimited',
                               ),
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Desk hours is required';
@@ -258,9 +290,10 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                                 hintText: '0 = unlimited',
                                 helperText: 'Enter 0 for unlimited',
                               ),
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Meeting room hours is required';
@@ -288,7 +321,9 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
                       const SizedBox(height: 16),
                       SwitchListTile(
                         title: const Text('Active'),
-                        subtitle: const Text('Plan is available for subscription'),
+                        subtitle: const Text(
+                          'Plan is available for subscription',
+                        ),
                         value: _isActive,
                         onChanged: (value) => setState(() => _isActive = value),
                       ),
@@ -326,4 +361,3 @@ class _AdminPlanFormDialogState extends ConsumerState<AdminPlanFormDialog> {
     );
   }
 }
-

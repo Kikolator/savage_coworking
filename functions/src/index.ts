@@ -7,6 +7,11 @@ import {
   updatePlan,
   deletePlan,
 } from "./modules/subscription/subscription.routes";
+import {
+  onSubscriptionChange,
+  onPassBundleChange,
+  onUsageChange,
+} from "./modules/membership/membership-summary.trigger";
 
 setGlobalOptions({
   maxInstances: 10,
@@ -20,4 +25,7 @@ export {
   createPlan,
   updatePlan,
   deletePlan,
+  onSubscriptionChange,
+  onPassBundleChange,
+  onUsageChange,
 };

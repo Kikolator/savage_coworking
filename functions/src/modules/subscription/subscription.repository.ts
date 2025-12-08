@@ -82,48 +82,78 @@ export async function findSubscriptionByStripeSubscriptionId(
 }
 
 /**
+ * Checks if user has an active subscription.
+ * @param {string} userId - User ID.
+ * @return {Promise<boolean>} True if user has active subscription.
+ */
+export async function hasActiveSubscription(
+  userId: string,
+): Promise<boolean> {
+  const active = await findActiveSubscriptionByUserId(userId);
+  return active !== null;
+}
+
+/**
  * Creates a new subscription.
+ * Enforces single active subscription per user.
  * @param {SubscriptionCreateDto} dto - Subscription creation data.
  * @param {SubscriptionPlan} plan - Subscription plan.
  * @return {Promise<Subscription>} Created subscription.
+ * @throws {Error} If user already has an active subscription.
  */
 export async function createSubscription(
   dto: SubscriptionCreateDto,
   plan: SubscriptionPlan,
 ): Promise<Subscription> {
+  // Enforce single active subscription per user
+  const hasActive = await hasActiveSubscription(dto.userId);
+  if (hasActive) {
+    throw new Error(
+      "User already has an active subscription. Only one active subscription allowed per user.",
+    );
+  }
+
   const now = Timestamp.now();
   
   // Determine initial status:
   // - If it has a Stripe subscription ID (from webhook), it's active (payment succeeded)
   // - Otherwise, it's a trial (manual creation or test)
   const initialStatus: "active" | "trial" =
-    dto.stripeSubscriptionId || dto.stripePaymentIntentId ? "active" : "trial";
+    dto.stripeSubscriptionId ? "active" : "trial";
   
+  // Calculate effective quota (plan quota + overrides)
+  const effectiveQuota = {
+    deskHoursPerPeriod: dto.overrides?.deskHoursPerPeriod ?? plan.quota.deskHoursPerPeriod,
+    meetingHoursPerPeriod: dto.overrides?.meetingHoursPerPeriod ?? plan.quota.meetingHoursPerPeriod,
+    access: plan.quota.access,
+    seatType: plan.quota.seatType,
+  };
+
   const subscription: Omit<Subscription, "id"> = {
     userId: dto.userId,
     planId: dto.planId,
-    planName: plan.name,
     status: initialStatus,
+    billing: {
+      type: "recurring",
+      period: plan.billing.period,
+      intervalCount: plan.billing.intervalCount ?? 1,
+    },
+    effectiveQuota,
+    overrides: dto.overrides,
+    display: {
+      planName: plan.name,
+      priceAmount: plan.pricing.amount,
+      priceCurrency: plan.pricing.currency,
+    },
     stripeCustomerId: dto.stripeCustomerId,
-    renewsAutomatically: plan.interval === "month",
+    stripeSubscriptionId: dto.stripeSubscriptionId,
     currentPeriodStart: dto.currentPeriodStart,
     currentPeriodEnd: dto.currentPeriodEnd,
     cancelAtPeriodEnd: false,
-    deskHours: plan.deskHours,
-    meetingRoomHours: plan.meetingRoomHours,
-    deskHoursUsed: 0,
-    meetingRoomHoursUsed: 0,
+    assignedDeskId: dto.assignedDeskId,
     createdAt: now,
     updatedAt: now,
   };
-
-  if (dto.stripeSubscriptionId) {
-    subscription.stripeSubscriptionId = dto.stripeSubscriptionId;
-  }
-
-  if (dto.stripePaymentIntentId) {
-    subscription.stripePaymentIntentId = dto.stripePaymentIntentId;
-  }
 
   const docRef = await subscriptionsCol().add(subscription);
   return {id: docRef.id, ...subscription};

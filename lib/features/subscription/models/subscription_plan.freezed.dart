@@ -23,17 +23,14 @@ SubscriptionPlan _$SubscriptionPlanFromJson(Map<String, dynamic> json) {
 mixin _$SubscriptionPlan {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  int get price => throw _privateConstructorUsedError; // Price in cents
-  String get currency => throw _privateConstructorUsedError;
-  @SubscriptionIntervalConverter()
-  SubscriptionInterval get interval => throw _privateConstructorUsedError;
-  double get deskHours => throw _privateConstructorUsedError; // 0 = unlimited
-  double get meetingRoomHours =>
-      throw _privateConstructorUsedError; // 0 = unlimited
+  @PlanCategoryConverter()
+  PlanCategory get category => throw _privateConstructorUsedError;
+  Billing get billing => throw _privateConstructorUsedError;
+  Quota get quota => throw _privateConstructorUsedError;
+  Pricing get pricing => throw _privateConstructorUsedError;
+  External? get external => throw _privateConstructorUsedError;
   List<String> get features => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
-  String? get stripePriceId => throw _privateConstructorUsedError;
-  String? get stripeProductId => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -59,18 +56,21 @@ abstract class $SubscriptionPlanCopyWith<$Res> {
   $Res call({
     String id,
     String name,
-    int price,
-    String currency,
-    @SubscriptionIntervalConverter() SubscriptionInterval interval,
-    double deskHours,
-    double meetingRoomHours,
+    @PlanCategoryConverter() PlanCategory category,
+    Billing billing,
+    Quota quota,
+    Pricing pricing,
+    External? external,
     List<String> features,
     bool isActive,
-    String? stripePriceId,
-    String? stripeProductId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
+
+  $BillingCopyWith<$Res> get billing;
+  $QuotaCopyWith<$Res> get quota;
+  $PricingCopyWith<$Res> get pricing;
+  $ExternalCopyWith<$Res>? get external;
 }
 
 /// @nodoc
@@ -90,15 +90,13 @@ class _$SubscriptionPlanCopyWithImpl<$Res, $Val extends SubscriptionPlan>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? price = null,
-    Object? currency = null,
-    Object? interval = null,
-    Object? deskHours = null,
-    Object? meetingRoomHours = null,
+    Object? category = null,
+    Object? billing = null,
+    Object? quota = null,
+    Object? pricing = null,
+    Object? external = freezed,
     Object? features = null,
     Object? isActive = null,
-    Object? stripePriceId = freezed,
-    Object? stripeProductId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -112,26 +110,26 @@ class _$SubscriptionPlanCopyWithImpl<$Res, $Val extends SubscriptionPlan>
                 ? _value.name
                 : name // ignore: cast_nullable_to_non_nullable
                       as String,
-            price: null == price
-                ? _value.price
-                : price // ignore: cast_nullable_to_non_nullable
-                      as int,
-            currency: null == currency
-                ? _value.currency
-                : currency // ignore: cast_nullable_to_non_nullable
-                      as String,
-            interval: null == interval
-                ? _value.interval
-                : interval // ignore: cast_nullable_to_non_nullable
-                      as SubscriptionInterval,
-            deskHours: null == deskHours
-                ? _value.deskHours
-                : deskHours // ignore: cast_nullable_to_non_nullable
-                      as double,
-            meetingRoomHours: null == meetingRoomHours
-                ? _value.meetingRoomHours
-                : meetingRoomHours // ignore: cast_nullable_to_non_nullable
-                      as double,
+            category: null == category
+                ? _value.category
+                : category // ignore: cast_nullable_to_non_nullable
+                      as PlanCategory,
+            billing: null == billing
+                ? _value.billing
+                : billing // ignore: cast_nullable_to_non_nullable
+                      as Billing,
+            quota: null == quota
+                ? _value.quota
+                : quota // ignore: cast_nullable_to_non_nullable
+                      as Quota,
+            pricing: null == pricing
+                ? _value.pricing
+                : pricing // ignore: cast_nullable_to_non_nullable
+                      as Pricing,
+            external: freezed == external
+                ? _value.external
+                : external // ignore: cast_nullable_to_non_nullable
+                      as External?,
             features: null == features
                 ? _value.features
                 : features // ignore: cast_nullable_to_non_nullable
@@ -140,14 +138,6 @@ class _$SubscriptionPlanCopyWithImpl<$Res, $Val extends SubscriptionPlan>
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
-            stripePriceId: freezed == stripePriceId
-                ? _value.stripePriceId
-                : stripePriceId // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            stripeProductId: freezed == stripeProductId
-                ? _value.stripeProductId
-                : stripeProductId // ignore: cast_nullable_to_non_nullable
-                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -159,6 +149,50 @@ class _$SubscriptionPlanCopyWithImpl<$Res, $Val extends SubscriptionPlan>
           )
           as $Val,
     );
+  }
+
+  /// Create a copy of SubscriptionPlan
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $BillingCopyWith<$Res> get billing {
+    return $BillingCopyWith<$Res>(_value.billing, (value) {
+      return _then(_value.copyWith(billing: value) as $Val);
+    });
+  }
+
+  /// Create a copy of SubscriptionPlan
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $QuotaCopyWith<$Res> get quota {
+    return $QuotaCopyWith<$Res>(_value.quota, (value) {
+      return _then(_value.copyWith(quota: value) as $Val);
+    });
+  }
+
+  /// Create a copy of SubscriptionPlan
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $PricingCopyWith<$Res> get pricing {
+    return $PricingCopyWith<$Res>(_value.pricing, (value) {
+      return _then(_value.copyWith(pricing: value) as $Val);
+    });
+  }
+
+  /// Create a copy of SubscriptionPlan
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $ExternalCopyWith<$Res>? get external {
+    if (_value.external == null) {
+      return null;
+    }
+
+    return $ExternalCopyWith<$Res>(_value.external!, (value) {
+      return _then(_value.copyWith(external: value) as $Val);
+    });
   }
 }
 
@@ -174,18 +208,25 @@ abstract class _$$SubscriptionPlanImplCopyWith<$Res>
   $Res call({
     String id,
     String name,
-    int price,
-    String currency,
-    @SubscriptionIntervalConverter() SubscriptionInterval interval,
-    double deskHours,
-    double meetingRoomHours,
+    @PlanCategoryConverter() PlanCategory category,
+    Billing billing,
+    Quota quota,
+    Pricing pricing,
+    External? external,
     List<String> features,
     bool isActive,
-    String? stripePriceId,
-    String? stripeProductId,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
+
+  @override
+  $BillingCopyWith<$Res> get billing;
+  @override
+  $QuotaCopyWith<$Res> get quota;
+  @override
+  $PricingCopyWith<$Res> get pricing;
+  @override
+  $ExternalCopyWith<$Res>? get external;
 }
 
 /// @nodoc
@@ -204,15 +245,13 @@ class __$$SubscriptionPlanImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? name = null,
-    Object? price = null,
-    Object? currency = null,
-    Object? interval = null,
-    Object? deskHours = null,
-    Object? meetingRoomHours = null,
+    Object? category = null,
+    Object? billing = null,
+    Object? quota = null,
+    Object? pricing = null,
+    Object? external = freezed,
     Object? features = null,
     Object? isActive = null,
-    Object? stripePriceId = freezed,
-    Object? stripeProductId = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -226,26 +265,26 @@ class __$$SubscriptionPlanImplCopyWithImpl<$Res>
             ? _value.name
             : name // ignore: cast_nullable_to_non_nullable
                   as String,
-        price: null == price
-            ? _value.price
-            : price // ignore: cast_nullable_to_non_nullable
-                  as int,
-        currency: null == currency
-            ? _value.currency
-            : currency // ignore: cast_nullable_to_non_nullable
-                  as String,
-        interval: null == interval
-            ? _value.interval
-            : interval // ignore: cast_nullable_to_non_nullable
-                  as SubscriptionInterval,
-        deskHours: null == deskHours
-            ? _value.deskHours
-            : deskHours // ignore: cast_nullable_to_non_nullable
-                  as double,
-        meetingRoomHours: null == meetingRoomHours
-            ? _value.meetingRoomHours
-            : meetingRoomHours // ignore: cast_nullable_to_non_nullable
-                  as double,
+        category: null == category
+            ? _value.category
+            : category // ignore: cast_nullable_to_non_nullable
+                  as PlanCategory,
+        billing: null == billing
+            ? _value.billing
+            : billing // ignore: cast_nullable_to_non_nullable
+                  as Billing,
+        quota: null == quota
+            ? _value.quota
+            : quota // ignore: cast_nullable_to_non_nullable
+                  as Quota,
+        pricing: null == pricing
+            ? _value.pricing
+            : pricing // ignore: cast_nullable_to_non_nullable
+                  as Pricing,
+        external: freezed == external
+            ? _value.external
+            : external // ignore: cast_nullable_to_non_nullable
+                  as External?,
         features: null == features
             ? _value._features
             : features // ignore: cast_nullable_to_non_nullable
@@ -254,14 +293,6 @@ class __$$SubscriptionPlanImplCopyWithImpl<$Res>
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
-        stripePriceId: freezed == stripePriceId
-            ? _value.stripePriceId
-            : stripePriceId // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        stripeProductId: freezed == stripeProductId
-            ? _value.stripeProductId
-            : stripeProductId // ignore: cast_nullable_to_non_nullable
-                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -281,15 +312,13 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
   const _$SubscriptionPlanImpl({
     required this.id,
     required this.name,
-    required this.price,
-    required this.currency,
-    @SubscriptionIntervalConverter() required this.interval,
-    required this.deskHours,
-    required this.meetingRoomHours,
+    @PlanCategoryConverter() required this.category,
+    required this.billing,
+    required this.quota,
+    required this.pricing,
+    this.external,
     required final List<String> features,
     required this.isActive,
-    this.stripePriceId,
-    this.stripeProductId,
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
   }) : _features = features;
@@ -302,21 +331,17 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
   @override
   final String name;
   @override
-  final int price;
-  // Price in cents
+  @PlanCategoryConverter()
+  final PlanCategory category;
   @override
-  final String currency;
+  final Billing billing;
   @override
-  @SubscriptionIntervalConverter()
-  final SubscriptionInterval interval;
+  final Quota quota;
   @override
-  final double deskHours;
-  // 0 = unlimited
+  final Pricing pricing;
   @override
-  final double meetingRoomHours;
-  // 0 = unlimited
+  final External? external;
   final List<String> _features;
-  // 0 = unlimited
   @override
   List<String> get features {
     if (_features is EqualUnmodifiableListView) return _features;
@@ -327,10 +352,6 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
   @override
   final bool isActive;
   @override
-  final String? stripePriceId;
-  @override
-  final String? stripeProductId;
-  @override
   @TimestampConverter()
   final DateTime createdAt;
   @override
@@ -339,7 +360,7 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
 
   @override
   String toString() {
-    return 'SubscriptionPlan(id: $id, name: $name, price: $price, currency: $currency, interval: $interval, deskHours: $deskHours, meetingRoomHours: $meetingRoomHours, features: $features, isActive: $isActive, stripePriceId: $stripePriceId, stripeProductId: $stripeProductId, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'SubscriptionPlan(id: $id, name: $name, category: $category, billing: $billing, quota: $quota, pricing: $pricing, external: $external, features: $features, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -349,22 +370,16 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
             other is _$SubscriptionPlanImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.name, name) || other.name == name) &&
-            (identical(other.price, price) || other.price == price) &&
-            (identical(other.currency, currency) ||
-                other.currency == currency) &&
-            (identical(other.interval, interval) ||
-                other.interval == interval) &&
-            (identical(other.deskHours, deskHours) ||
-                other.deskHours == deskHours) &&
-            (identical(other.meetingRoomHours, meetingRoomHours) ||
-                other.meetingRoomHours == meetingRoomHours) &&
+            (identical(other.category, category) ||
+                other.category == category) &&
+            (identical(other.billing, billing) || other.billing == billing) &&
+            (identical(other.quota, quota) || other.quota == quota) &&
+            (identical(other.pricing, pricing) || other.pricing == pricing) &&
+            (identical(other.external, external) ||
+                other.external == external) &&
             const DeepCollectionEquality().equals(other._features, _features) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
-            (identical(other.stripePriceId, stripePriceId) ||
-                other.stripePriceId == stripePriceId) &&
-            (identical(other.stripeProductId, stripeProductId) ||
-                other.stripeProductId == stripeProductId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -377,15 +392,13 @@ class _$SubscriptionPlanImpl implements _SubscriptionPlan {
     runtimeType,
     id,
     name,
-    price,
-    currency,
-    interval,
-    deskHours,
-    meetingRoomHours,
+    category,
+    billing,
+    quota,
+    pricing,
+    external,
     const DeepCollectionEquality().hash(_features),
     isActive,
-    stripePriceId,
-    stripeProductId,
     createdAt,
     updatedAt,
   );
@@ -411,16 +424,13 @@ abstract class _SubscriptionPlan implements SubscriptionPlan {
   const factory _SubscriptionPlan({
     required final String id,
     required final String name,
-    required final int price,
-    required final String currency,
-    @SubscriptionIntervalConverter()
-    required final SubscriptionInterval interval,
-    required final double deskHours,
-    required final double meetingRoomHours,
+    @PlanCategoryConverter() required final PlanCategory category,
+    required final Billing billing,
+    required final Quota quota,
+    required final Pricing pricing,
+    final External? external,
     required final List<String> features,
     required final bool isActive,
-    final String? stripePriceId,
-    final String? stripeProductId,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
   }) = _$SubscriptionPlanImpl;
@@ -433,24 +443,20 @@ abstract class _SubscriptionPlan implements SubscriptionPlan {
   @override
   String get name;
   @override
-  int get price; // Price in cents
+  @PlanCategoryConverter()
+  PlanCategory get category;
   @override
-  String get currency;
+  Billing get billing;
   @override
-  @SubscriptionIntervalConverter()
-  SubscriptionInterval get interval;
+  Quota get quota;
   @override
-  double get deskHours; // 0 = unlimited
+  Pricing get pricing;
   @override
-  double get meetingRoomHours; // 0 = unlimited
+  External? get external;
   @override
   List<String> get features;
   @override
   bool get isActive;
-  @override
-  String? get stripePriceId;
-  @override
-  String? get stripeProductId;
   @override
   @TimestampConverter()
   DateTime get createdAt;

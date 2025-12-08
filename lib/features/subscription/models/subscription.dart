@@ -2,8 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 import '../../../core/converters/timestamp_converter.dart';
-import 'subscription_converters.dart';
+import 'billing.dart';
+import 'billing_period.dart';
+import 'display.dart';
+import 'overrides.dart';
+import 'quota.dart';
 import 'subscription_status.dart';
+import 'subscription_converters.dart';
 
 part 'subscription.freezed.dart';
 part 'subscription.g.dart';
@@ -14,19 +19,19 @@ class Subscription with _$Subscription {
     required String id,
     required String userId,
     required String planId,
-    required String planName,
     @SubscriptionStatusConverter() required SubscriptionStatus status,
-    String? stripeSubscriptionId,
+    required Billing billing,
+    required Quota effectiveQuota,
+    Overrides? overrides,
+    required Display display,
     required String stripeCustomerId,
-    String? stripePaymentIntentId,
-    required bool renewsAutomatically,
+    String? stripeSubscriptionId,
     @TimestampConverter() required DateTime currentPeriodStart,
     @TimestampConverter() required DateTime currentPeriodEnd,
     required bool cancelAtPeriodEnd,
-    required double deskHours,
-    required double meetingRoomHours,
-    required double deskHoursUsed,
-    required double meetingRoomHoursUsed,
+    @NullableTimestampConverter() DateTime? cancelledAt,
+    String? cancelledBy,
+    String? assignedDeskId,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,
   }) = _Subscription;
@@ -36,22 +41,19 @@ class Subscription with _$Subscription {
 }
 
 extension SubscriptionX on Subscription {
-  double get deskHoursLeft {
-    if (deskHours == 0) return double.infinity;
-    return (deskHours - deskHoursUsed).clamp(0, double.infinity);
-  }
-
-  double get meetingRoomHoursLeft {
-    if (meetingRoomHours == 0) return double.infinity;
-    return (meetingRoomHours - meetingRoomHoursUsed)
-        .clamp(0, double.infinity);
-  }
-
   String get billingCycle {
-    return renewsAutomatically ? 'Monthly' : 'One-time';
+    return '${billing.intervalCount} ${billing.period?.label ?? 'month'}';
   }
 
   bool get isActive => status.isActive;
+
+  // Helper getters for quota (for display purposes)
+  // Note: Actual usage comes from Usage collection
+  double? get deskHoursPerPeriod => effectiveQuota.deskHoursPerPeriod;
+  double? get meetingHoursPerPeriod => effectiveQuota.meetingHoursPerPeriod;
+
+  bool get hasUnlimitedDesk =>
+      deskHoursPerPeriod == null || deskHoursPerPeriod == 0;
+  bool get hasUnlimitedMeeting =>
+      meetingHoursPerPeriod == null || meetingHoursPerPeriod == 0;
 }
-
-
