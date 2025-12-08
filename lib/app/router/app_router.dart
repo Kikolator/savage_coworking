@@ -54,22 +54,25 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             name: AppRoute.bookings.name,
             builder: (context, state) => const BookingsView(),
           ),
-          GoRoute(
-            path: AppRoute.settings.path,
-            name: AppRoute.settings.name,
-            builder: (context, state) => const SettingsView(),
-          ),
-          GoRoute(
-            path: AppRoute.subscriptions.path,
-            name: AppRoute.subscriptions.name,
-            builder: (context, state) => const SubscriptionView(),
-          ),
-          GoRoute(
-            path: AppRoute.billing.path,
-            name: AppRoute.billing.name,
-            builder: (context, state) => const BillingView(),
-          ),
         ],
+      ),
+      GoRoute(
+        path: AppRoute.settings.path,
+        name: AppRoute.settings.name,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsView(),
+      ),
+      GoRoute(
+        path: AppRoute.subscriptions.path,
+        name: AppRoute.subscriptions.name,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SubscriptionView(),
+      ),
+      GoRoute(
+        path: AppRoute.billing.path,
+        name: AppRoute.billing.name,
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const BillingView(),
       ),
       GoRoute(
         path: AppRoute.admin.path,
@@ -88,7 +91,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isNavigatingToSplash = location == AppRoute.splash.path;
       final isNavigatingToAuth = location == AppRoute.auth.path;
       final isNavigatingToAdmin = location == AppRoute.admin.path;
-      final isNavigatingToDashboard = location == AppRoute.home.path ||
+      final isNavigatingToDashboard =
+          location == AppRoute.home.path ||
           location == AppRoute.hotDesk.path ||
           location == AppRoute.bookings.path ||
           location == AppRoute.settings.path ||

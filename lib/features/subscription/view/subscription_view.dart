@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/router/app_route.dart';
 import '../../auth/models/auth_user.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../auth/view/auth_view.dart';
@@ -102,6 +103,17 @@ class SubscriptionView extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoute.home.path);
+            }
+          },
+          tooltip: 'Close',
+        ),
         title: const Text('Subscription'),
       ),
       body: view,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../app/router/app_route.dart';
 
 class BillingView extends StatelessWidget {
   const BillingView({super.key});
@@ -7,6 +10,17 @@ class BillingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go(AppRoute.home.path);
+            }
+          },
+          tooltip: 'Close',
+        ),
         title: const Text('Billing & Invoices'),
       ),
       body: const Center(

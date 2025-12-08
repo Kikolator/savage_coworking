@@ -74,7 +74,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
               title: 'Preferences',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to preferences
+                context.go(AppRoute.settings.path);
               },
             ),
             if (user?.isAdmin == true) ...[
@@ -182,7 +182,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
               title: 'Preferences',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to preferences
+                context.go(AppRoute.settings.path);
               },
             ),
             if (user?.isAdmin == true) ...[
