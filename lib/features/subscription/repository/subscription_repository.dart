@@ -66,7 +66,6 @@ class SubscriptionRepository {
   Future<List<SubscriptionPlan>> getActivePlans() async {
     final snapshot = await _plansCollection
         .where('isActive', isEqualTo: true)
-        .orderBy('price')
         .get();
     return snapshot.docs.map((doc) => doc.data()).toList();
   }

@@ -175,7 +175,7 @@ class AdminSubscriptionRepository {
 
   /// Fetch all plans (active and inactive)
   Future<List<SubscriptionPlan>> fetchAllPlans() async {
-    final snapshot = await _plansCollection.orderBy('price').get();
+    final snapshot = await _plansCollection.get();
     return snapshot.docs.map((doc) => doc.data()).toList();
   }
 
