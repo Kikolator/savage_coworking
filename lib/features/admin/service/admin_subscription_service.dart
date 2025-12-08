@@ -72,6 +72,7 @@ class AdminSubscriptionService {
       type: formData.accessType!,
       startTime: formData.startTime,
       endTime: formData.endTime,
+      allowedDaysOfWeek: formData.allowedDaysOfWeek ?? [],
     );
 
     final quota = Quota(
@@ -94,6 +95,7 @@ class AdminSubscriptionService {
       currency: formData.currency,
       amount: formData.price!,
       billingDescription: billingDescription,
+      taxIncluded: formData.taxIncluded,
     );
 
     final external =
@@ -206,6 +208,7 @@ class AdminSubscriptionService {
         'currency': formData.currency,
         'amount': formData.price ?? existingPlan.pricing.amount,
         'billingDescription': billingDescription,
+        'taxIncluded': formData.taxIncluded,
       };
     }
     if (formData.deskHours != null ||
@@ -228,11 +231,13 @@ class AdminSubscriptionService {
           'startTime':
               formData.startTime ?? existingPlan.quota.access.startTime,
           'endTime': formData.endTime ?? existingPlan.quota.access.endTime,
+          'allowedDaysOfWeek': formData.allowedDaysOfWeek ??
+              existingPlan.quota.access.allowedDaysOfWeek,
         },
         'seatType': formData.seatType != null
-            ? SeatTypeX(formData.seatType!).toJson()
+            ? formData.seatType!.toJson()
             : existingPlan.quota.seatType != null
-            ? SeatTypeX(existingPlan.quota.seatType!).toJson()
+            ? existingPlan.quota.seatType!.toJson()
             : null,
       };
     }

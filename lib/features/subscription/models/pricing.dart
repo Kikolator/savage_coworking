@@ -9,6 +9,7 @@ class Pricing with _$Pricing {
     required String currency,
     required int amount,
     required String billingDescription,
+    @Default(true) bool taxIncluded,
   }) = _Pricing;
 
   factory Pricing.fromJson(Map<String, dynamic> json) =>

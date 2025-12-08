@@ -90,6 +90,7 @@ interface SubscriptionPlan {
   - `currency`: ISO 4217 currency code
   - `amount`: Price in smallest currency unit (cents for USD)
   - `billingDescription`: Human-readable description (e.g., "$29.99/month")
+  - `taxIncluded`: Boolean indicating whether tax is included in the price (default: `true`)
 - `external`: External integration IDs (Stripe):
   - `stripeProductId`: Stripe Product ID
   - `stripePriceId`: Stripe Price ID (for recurring plans)

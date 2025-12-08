@@ -42,9 +42,11 @@ class AdminPlanFormData {
     this.accessType,
     this.startTime,
     this.endTime,
+    this.allowedDaysOfWeek,
     this.seatType,
     this.features = const [],
     this.isActive = true,
+    this.taxIncluded = true,
     this.stripePriceId,
     this.stripeProductId,
   });
@@ -64,9 +66,11 @@ class AdminPlanFormData {
   final AccessType? accessType;
   final String? startTime; // HH:mm format
   final String? endTime; // HH:mm format
+  final List<int>? allowedDaysOfWeek; // 0-6, Sunday=0 to Saturday=6
   final SeatType? seatType;
   final List<String> features;
   final bool isActive;
+  final bool taxIncluded;
   final String? stripePriceId;
   final String? stripeProductId;
 
@@ -86,9 +90,11 @@ class AdminPlanFormData {
     AccessType? accessType,
     String? startTime,
     String? endTime,
+    List<int>? allowedDaysOfWeek,
     SeatType? seatType,
     List<String>? features,
     bool? isActive,
+    bool? taxIncluded,
     String? stripePriceId,
     String? stripeProductId,
   }) {
@@ -108,9 +114,11 @@ class AdminPlanFormData {
       accessType: accessType ?? this.accessType,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
+      allowedDaysOfWeek: allowedDaysOfWeek ?? this.allowedDaysOfWeek,
       seatType: seatType ?? this.seatType,
       features: features ?? this.features,
       isActive: isActive ?? this.isActive,
+      taxIncluded: taxIncluded ?? this.taxIncluded,
       stripePriceId: stripePriceId ?? this.stripePriceId,
       stripeProductId: stripeProductId ?? this.stripeProductId,
     );
@@ -134,9 +142,13 @@ class AdminPlanFormData {
       accessType: plan.quota.access.type,
       startTime: plan.quota.access.startTime,
       endTime: plan.quota.access.endTime,
+      allowedDaysOfWeek: plan.quota.access.allowedDaysOfWeek.isNotEmpty
+          ? List<int>.from(plan.quota.access.allowedDaysOfWeek)
+          : null,
       seatType: plan.quota.seatType,
       features: List<String>.from(plan.features),
       isActive: plan.isActive,
+      taxIncluded: plan.pricing.taxIncluded,
       stripePriceId: plan.external?.stripePriceId,
       stripeProductId: plan.external?.stripeProductId,
     );
