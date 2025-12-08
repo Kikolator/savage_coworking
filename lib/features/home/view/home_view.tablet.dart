@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/models/auth_user.dart';
 import '../../subscription/models/subscription.dart';
+import '../../subscription/providers/subscription_providers.dart';
 import '../../subscription/service/subscription_service.dart';
 import '../../workspace/view/widgets/create_workspace_dialog.dart';
 import 'widgets/subscription_selection_cta.dart';
@@ -30,14 +31,8 @@ class HomeViewTablet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Check for active subscription
-    final subscriptionAsync = ref.watch(
-      FutureProvider.autoDispose<Subscription?>((ref) async {
-        final (subscription, _) = await subscriptionService
-            .getActiveSubscription(userId);
-        return subscription;
-      }),
-    );
+    // Check for active subscription using proper provider
+    final subscriptionAsync = ref.watch(activeSubscriptionProvider(userId));
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -58,79 +53,57 @@ class HomeViewTablet extends ConsumerWidget {
                   const SizedBox(height: 24),
                 ],
 
-                // Subscription selection CTA (only if workspace is selected)
-                if (hasSelectedWorkspace) ...[
-                  subscriptionAsync.when(
-                    data: (subscription) {
-                      if (subscription == null || !subscription.isActive) {
-                        return const SubscriptionSelectionCTA();
-                      }
-                      return const SizedBox.shrink();
-                    },
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    error: (_, __) => const SizedBox.shrink(),
-                  ),
-                  if (subscriptionAsync.valueOrNull == null ||
-                      !subscriptionAsync.valueOrNull!.isActive)
-                    const SizedBox(height: 24),
-                ],
-
-                // Dashboard widgets (only if workspace and subscription are set)
+                // Handle subscription state once (only if workspace is selected)
                 if (hasSelectedWorkspace)
                   subscriptionAsync.when(
                     data: (subscription) {
-                      if (subscription != null && subscription.isActive) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Top row: Upcoming Bookings and Quick Actions
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: UpcomingBookingsCard(userId: userId),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(flex: 1, child: QuickActionsCard()),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            // Bottom row: Subscription Info and Usage Stats
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: SubscriptionInfoCard(
-                                    subscription: subscription,
-                                  ),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  flex: 1,
-                                  child: UsageStatsCard(
-                                    userId: userId,
-                                    subscription: subscription,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
+                      // Show subscription CTA if no active subscription
+                      if (subscription == null || !subscription.isActive) {
+                        return const SubscriptionSelectionCTA();
                       }
-                      return const SizedBox.shrink();
+                      // Show dashboard if subscription is active
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Top row: Upcoming Bookings and Quick Actions
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: UpcomingBookingsCard(userId: userId),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(flex: 1, child: QuickActionsCard()),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          // Bottom row: Subscription Info and Usage Stats
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: SubscriptionInfoCard(
+                                  subscription: subscription,
+                                ),
+                              ),
+                              const SizedBox(width: 24),
+                              Expanded(
+                                flex: 1,
+                                child: UsageStatsCard(
+                                  userId: userId,
+                                  subscription: subscription,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
                     },
-                    loading: () => const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      ),
+                    loading: () => const SizedBox(
+                      height: 400,
+                      child: Center(child: CircularProgressIndicator()),
                     ),
                     error: (_, __) => const SizedBox.shrink(),
                   ),
