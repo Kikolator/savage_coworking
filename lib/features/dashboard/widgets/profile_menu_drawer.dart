@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,7 +14,15 @@ class ProfileMenuDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
-    final isApplePlatform = Theme.of(context).platform == TargetPlatform.iOS ||
+
+    // Web always uses Material 3, regardless of underlying OS
+    if (kIsWeb) {
+      return _buildMaterialDrawer(context, ref, user);
+    }
+
+    // For native apps, check platform
+    final isApplePlatform =
+        Theme.of(context).platform == TargetPlatform.iOS ||
         Theme.of(context).platform == TargetPlatform.macOS;
 
     if (isApplePlatform) {
@@ -23,15 +32,30 @@ class ProfileMenuDrawer extends ConsumerWidget {
     }
   }
 
-  Widget _buildMaterialDrawer(
-    BuildContext context,
-    WidgetRef ref,
-    user,
-  ) {
+  Widget _buildMaterialDrawer(BuildContext context, WidgetRef ref, user) {
     return Drawer(
+      width: 304, // Explicit width to prevent expansion on wide screens
       child: SafeArea(
         child: Column(
           children: [
+            // Close button header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Menu',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                  tooltip: 'Close',
+                ),
+              ],
+            ),
             _buildUserHeader(context, user),
             const Divider(),
             _buildMenuItem(
@@ -113,15 +137,40 @@ class ProfileMenuDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildCupertinoDrawer(
-    BuildContext context,
-    WidgetRef ref,
-    user,
-  ) {
-    return CupertinoPageScaffold(
+  Widget _buildCupertinoDrawer(BuildContext context, WidgetRef ref, user) {
+    // Use Container with width constraint instead of CupertinoPageScaffold
+    // to prevent full-screen expansion
+    return Container(
+      width: 304, // Explicit width constraint
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground,
+        border: Border(
+          left: BorderSide(color: CupertinoColors.separator, width: 0.5),
+        ),
+      ),
       child: SafeArea(
         child: Column(
           children: [
+            // Close button header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Menu',
+                    style: CupertinoTheme.of(
+                      context,
+                    ).textTheme.navTitleTextStyle,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: const EdgeInsets.all(16.0),
+                  child: const Icon(CupertinoIcons.xmark),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
             _buildUserHeader(context, user),
             const Divider(),
             _buildCupertinoMenuItem(
@@ -237,8 +286,8 @@ class ProfileMenuDrawer extends ConsumerWidget {
             Text(
               user!.email,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -253,11 +302,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
-    );
+    return ListTile(leading: Icon(icon), title: Text(title), onTap: onTap);
   }
 
   Widget _buildCupertinoMenuItem(
@@ -273,4 +318,3 @@ class ProfileMenuDrawer extends ConsumerWidget {
     );
   }
 }
-
