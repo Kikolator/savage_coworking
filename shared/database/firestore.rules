@@ -27,6 +27,13 @@ service cloud.firestore {
       return source in ['app', 'admin', 'system'];
     }
 
+    function hasValidBusinessHours(data) {
+      return (('businessHoursStart' in data) ? isValidTimeFormat(data.businessHoursStart) : true)
+        && (('businessHoursEnd' in data) ? isValidTimeFormat(data.businessHoursEnd) : true)
+        && (!('businessHoursStart' in data) || !('businessHoursEnd' in data) || data.businessHoursStart < data.businessHoursEnd)
+        && (('businessDaysOfWeek' in data) ? (data.businessDaysOfWeek is list && data.businessDaysOfWeek.size() <= 7 && data.businessDaysOfWeek.size() >= 0) : true);
+    }
+
     function durationMinutes(startAt, endAt) {
       return (endAt.toMillis() - startAt.toMillis()) / (1000 * 60);
     }
@@ -120,7 +127,9 @@ service cloud.firestore {
       allow read: if signedIn();
     }
     match /workspaces/{document} {
-      allow write: if isAdmin();
+      allow create: if isAdmin() && hasValidBusinessHours(request.resource.data);
+      allow update: if isAdmin() && hasValidBusinessHours(request.resource.data);
+      allow delete: if isAdmin();
       allow read: if signedIn();
     }
 

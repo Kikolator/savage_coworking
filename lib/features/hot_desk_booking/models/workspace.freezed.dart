@@ -27,6 +27,9 @@ mixin _$Workspace {
   String get country => throw _privateConstructorUsedError;
   String? get companyLogoUrl => throw _privateConstructorUsedError;
   bool get isActive => throw _privateConstructorUsedError;
+  String? get businessHoursStart => throw _privateConstructorUsedError;
+  String? get businessHoursEnd => throw _privateConstructorUsedError;
+  List<int> get businessDaysOfWeek => throw _privateConstructorUsedError;
   @TimestampConverter()
   DateTime get createdAt => throw _privateConstructorUsedError;
   @TimestampConverter()
@@ -54,6 +57,9 @@ abstract class $WorkspaceCopyWith<$Res> {
     String country,
     String? companyLogoUrl,
     bool isActive,
+    String? businessHoursStart,
+    String? businessHoursEnd,
+    List<int> businessDaysOfWeek,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
@@ -80,6 +86,9 @@ class _$WorkspaceCopyWithImpl<$Res, $Val extends Workspace>
     Object? country = null,
     Object? companyLogoUrl = freezed,
     Object? isActive = null,
+    Object? businessHoursStart = freezed,
+    Object? businessHoursEnd = freezed,
+    Object? businessDaysOfWeek = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -109,6 +118,18 @@ class _$WorkspaceCopyWithImpl<$Res, $Val extends Workspace>
                 ? _value.isActive
                 : isActive // ignore: cast_nullable_to_non_nullable
                       as bool,
+            businessHoursStart: freezed == businessHoursStart
+                ? _value.businessHoursStart
+                : businessHoursStart // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            businessHoursEnd: freezed == businessHoursEnd
+                ? _value.businessHoursEnd
+                : businessHoursEnd // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            businessDaysOfWeek: null == businessDaysOfWeek
+                ? _value.businessDaysOfWeek
+                : businessDaysOfWeek // ignore: cast_nullable_to_non_nullable
+                      as List<int>,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -139,6 +160,9 @@ abstract class _$$WorkspaceImplCopyWith<$Res>
     String country,
     String? companyLogoUrl,
     bool isActive,
+    String? businessHoursStart,
+    String? businessHoursEnd,
+    List<int> businessDaysOfWeek,
     @TimestampConverter() DateTime createdAt,
     @TimestampConverter() DateTime updatedAt,
   });
@@ -164,6 +188,9 @@ class __$$WorkspaceImplCopyWithImpl<$Res>
     Object? country = null,
     Object? companyLogoUrl = freezed,
     Object? isActive = null,
+    Object? businessHoursStart = freezed,
+    Object? businessHoursEnd = freezed,
+    Object? businessDaysOfWeek = null,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -193,6 +220,18 @@ class __$$WorkspaceImplCopyWithImpl<$Res>
             ? _value.isActive
             : isActive // ignore: cast_nullable_to_non_nullable
                   as bool,
+        businessHoursStart: freezed == businessHoursStart
+            ? _value.businessHoursStart
+            : businessHoursStart // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        businessHoursEnd: freezed == businessHoursEnd
+            ? _value.businessHoursEnd
+            : businessHoursEnd // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        businessDaysOfWeek: null == businessDaysOfWeek
+            ? _value._businessDaysOfWeek
+            : businessDaysOfWeek // ignore: cast_nullable_to_non_nullable
+                  as List<int>,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -216,9 +255,12 @@ class _$WorkspaceImpl implements _Workspace {
     required this.country,
     this.companyLogoUrl,
     required this.isActive,
+    this.businessHoursStart,
+    this.businessHoursEnd,
+    final List<int> businessDaysOfWeek = const [],
     @TimestampConverter() required this.createdAt,
     @TimestampConverter() required this.updatedAt,
-  });
+  }) : _businessDaysOfWeek = businessDaysOfWeek;
 
   factory _$WorkspaceImpl.fromJson(Map<String, dynamic> json) =>
       _$$WorkspaceImplFromJson(json);
@@ -236,6 +278,20 @@ class _$WorkspaceImpl implements _Workspace {
   @override
   final bool isActive;
   @override
+  final String? businessHoursStart;
+  @override
+  final String? businessHoursEnd;
+  final List<int> _businessDaysOfWeek;
+  @override
+  @JsonKey()
+  List<int> get businessDaysOfWeek {
+    if (_businessDaysOfWeek is EqualUnmodifiableListView)
+      return _businessDaysOfWeek;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_businessDaysOfWeek);
+  }
+
+  @override
   @TimestampConverter()
   final DateTime createdAt;
   @override
@@ -244,7 +300,7 @@ class _$WorkspaceImpl implements _Workspace {
 
   @override
   String toString() {
-    return 'Workspace(id: $id, name: $name, location: $location, country: $country, companyLogoUrl: $companyLogoUrl, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Workspace(id: $id, name: $name, location: $location, country: $country, companyLogoUrl: $companyLogoUrl, isActive: $isActive, businessHoursStart: $businessHoursStart, businessHoursEnd: $businessHoursEnd, businessDaysOfWeek: $businessDaysOfWeek, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -261,6 +317,14 @@ class _$WorkspaceImpl implements _Workspace {
                 other.companyLogoUrl == companyLogoUrl) &&
             (identical(other.isActive, isActive) ||
                 other.isActive == isActive) &&
+            (identical(other.businessHoursStart, businessHoursStart) ||
+                other.businessHoursStart == businessHoursStart) &&
+            (identical(other.businessHoursEnd, businessHoursEnd) ||
+                other.businessHoursEnd == businessHoursEnd) &&
+            const DeepCollectionEquality().equals(
+              other._businessDaysOfWeek,
+              _businessDaysOfWeek,
+            ) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -277,6 +341,9 @@ class _$WorkspaceImpl implements _Workspace {
     country,
     companyLogoUrl,
     isActive,
+    businessHoursStart,
+    businessHoursEnd,
+    const DeepCollectionEquality().hash(_businessDaysOfWeek),
     createdAt,
     updatedAt,
   );
@@ -303,6 +370,9 @@ abstract class _Workspace implements Workspace {
     required final String country,
     final String? companyLogoUrl,
     required final bool isActive,
+    final String? businessHoursStart,
+    final String? businessHoursEnd,
+    final List<int> businessDaysOfWeek,
     @TimestampConverter() required final DateTime createdAt,
     @TimestampConverter() required final DateTime updatedAt,
   }) = _$WorkspaceImpl;
@@ -322,6 +392,12 @@ abstract class _Workspace implements Workspace {
   String? get companyLogoUrl;
   @override
   bool get isActive;
+  @override
+  String? get businessHoursStart;
+  @override
+  String? get businessHoursEnd;
+  @override
+  List<int> get businessDaysOfWeek;
   @override
   @TimestampConverter()
   DateTime get createdAt;

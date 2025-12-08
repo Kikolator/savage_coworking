@@ -24,6 +24,7 @@ mixin _$Pricing {
   String get currency => throw _privateConstructorUsedError;
   int get amount => throw _privateConstructorUsedError;
   String get billingDescription => throw _privateConstructorUsedError;
+  bool get taxIncluded => throw _privateConstructorUsedError;
 
   /// Serializes this Pricing to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -39,7 +40,12 @@ abstract class $PricingCopyWith<$Res> {
   factory $PricingCopyWith(Pricing value, $Res Function(Pricing) then) =
       _$PricingCopyWithImpl<$Res, Pricing>;
   @useResult
-  $Res call({String currency, int amount, String billingDescription});
+  $Res call({
+    String currency,
+    int amount,
+    String billingDescription,
+    bool taxIncluded,
+  });
 }
 
 /// @nodoc
@@ -60,6 +66,7 @@ class _$PricingCopyWithImpl<$Res, $Val extends Pricing>
     Object? currency = null,
     Object? amount = null,
     Object? billingDescription = null,
+    Object? taxIncluded = null,
   }) {
     return _then(
       _value.copyWith(
@@ -75,6 +82,10 @@ class _$PricingCopyWithImpl<$Res, $Val extends Pricing>
                 ? _value.billingDescription
                 : billingDescription // ignore: cast_nullable_to_non_nullable
                       as String,
+            taxIncluded: null == taxIncluded
+                ? _value.taxIncluded
+                : taxIncluded // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -89,7 +100,12 @@ abstract class _$$PricingImplCopyWith<$Res> implements $PricingCopyWith<$Res> {
   ) = __$$PricingImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String currency, int amount, String billingDescription});
+  $Res call({
+    String currency,
+    int amount,
+    String billingDescription,
+    bool taxIncluded,
+  });
 }
 
 /// @nodoc
@@ -109,6 +125,7 @@ class __$$PricingImplCopyWithImpl<$Res>
     Object? currency = null,
     Object? amount = null,
     Object? billingDescription = null,
+    Object? taxIncluded = null,
   }) {
     return _then(
       _$PricingImpl(
@@ -124,6 +141,10 @@ class __$$PricingImplCopyWithImpl<$Res>
             ? _value.billingDescription
             : billingDescription // ignore: cast_nullable_to_non_nullable
                   as String,
+        taxIncluded: null == taxIncluded
+            ? _value.taxIncluded
+            : taxIncluded // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -136,6 +157,7 @@ class _$PricingImpl implements _Pricing {
     required this.currency,
     required this.amount,
     required this.billingDescription,
+    this.taxIncluded = true,
   });
 
   factory _$PricingImpl.fromJson(Map<String, dynamic> json) =>
@@ -147,10 +169,13 @@ class _$PricingImpl implements _Pricing {
   final int amount;
   @override
   final String billingDescription;
+  @override
+  @JsonKey()
+  final bool taxIncluded;
 
   @override
   String toString() {
-    return 'Pricing(currency: $currency, amount: $amount, billingDescription: $billingDescription)';
+    return 'Pricing(currency: $currency, amount: $amount, billingDescription: $billingDescription, taxIncluded: $taxIncluded)';
   }
 
   @override
@@ -162,13 +187,20 @@ class _$PricingImpl implements _Pricing {
                 other.currency == currency) &&
             (identical(other.amount, amount) || other.amount == amount) &&
             (identical(other.billingDescription, billingDescription) ||
-                other.billingDescription == billingDescription));
+                other.billingDescription == billingDescription) &&
+            (identical(other.taxIncluded, taxIncluded) ||
+                other.taxIncluded == taxIncluded));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, currency, amount, billingDescription);
+  int get hashCode => Object.hash(
+    runtimeType,
+    currency,
+    amount,
+    billingDescription,
+    taxIncluded,
+  );
 
   /// Create a copy of Pricing
   /// with the given fields replaced by the non-null parameter values.
@@ -189,6 +221,7 @@ abstract class _Pricing implements Pricing {
     required final String currency,
     required final int amount,
     required final String billingDescription,
+    final bool taxIncluded,
   }) = _$PricingImpl;
 
   factory _Pricing.fromJson(Map<String, dynamic> json) = _$PricingImpl.fromJson;
@@ -199,6 +232,8 @@ abstract class _Pricing implements Pricing {
   int get amount;
   @override
   String get billingDescription;
+  @override
+  bool get taxIncluded;
 
   /// Create a copy of Pricing
   /// with the given fields replaced by the non-null parameter values.

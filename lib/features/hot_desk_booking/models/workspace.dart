@@ -15,6 +15,9 @@ class Workspace with _$Workspace {
     required String country,
     String? companyLogoUrl,
     required bool isActive,
+    String? businessHoursStart,
+    String? businessHoursEnd,
+    @Default([]) List<int> businessDaysOfWeek,
     @TimestampConverter() required DateTime createdAt,
     @TimestampConverter() required DateTime updatedAt,
   }) = _Workspace;
