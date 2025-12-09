@@ -21,7 +21,12 @@ void main() async {
         ? dev.DefaultFirebaseOptions.currentPlatform
         : DefaultFirebaseOptions.currentPlatform,
   );
-  connectFirebaseEmulators();
+  connectFirebaseEmulators(
+    useAuthEmulator: false,
+    useFirestoreEmulator: kDebugMode,
+    useStorageEmulator: kDebugMode,
+    useFunctionsEmulator: kDebugMode,
+  );
 
   // Initialize debug configuration
   DebugConfig.initialize(enableProviderLogging: true);

@@ -16,7 +16,12 @@ import 'package:flutter/foundation.dart';
 ///
 /// If emulators are not running, this function will gracefully fail without
 /// crashing the app.
-void connectFirebaseEmulators() {
+void connectFirebaseEmulators({
+  bool useAuthEmulator = true,
+  bool useFirestoreEmulator = true,
+  bool useStorageEmulator = true,
+  bool useFunctionsEmulator = true,
+}) {
   // Only connect to emulators in debug mode
   if (!kDebugMode) {
     return;
@@ -45,24 +50,26 @@ void connectFirebaseEmulators() {
           host = 'localhost';
       }
     }
-
-    // Connect Auth emulator (port 9095 from firebase.json)
-    FirebaseAuth.instance.useAuthEmulator(host, 9095);
-
-    // Connect Firestore emulator (port 8081 from firebase.json)
-    FirebaseFirestore.instance.useFirestoreEmulator(host, 8081);
-
-    // Connect Storage emulator (port 9198 from firebase.json)
-    FirebaseStorage.instance.useStorageEmulator(host, 9198);
-
-    // Connect Functions emulator (port 5005 from firebase.json)
-    // Note: This is also handled by FirebaseFunctionsService, but we can
-    // set it here for consistency
-    try {
-      final functions = FirebaseFunctions.instance;
-      functions.useFunctionsEmulator(host, 5005);
-    } catch (e) {
-      debugPrint('Failed to connect to Functions emulator: $e');
+    if (useAuthEmulator) {
+      // Connect Auth emulator (port 9095 from firebase.json)
+      FirebaseAuth.instance.useAuthEmulator(host, 9095);
+    }
+    if (useFirestoreEmulator) {
+      FirebaseFirestore.instance.useFirestoreEmulator(host, 8081);
+    }
+    if (useStorageEmulator) {
+      FirebaseStorage.instance.useStorageEmulator(host, 9198);
+    }
+    if (useFunctionsEmulator) {
+      // Connect Functions emulator (port 5005 from firebase.json)
+      // Note: This is also handled by FirebaseFunctionsService, but we can
+      // set it here for consistency
+      try {
+        final functions = FirebaseFunctions.instance;
+        functions.useFunctionsEmulator(host, 5005);
+      } catch (e) {
+        debugPrint('Failed to connect to Functions emulator: $e');
+      }
     }
   } catch (e) {
     // Gracefully handle errors if emulators aren't running
