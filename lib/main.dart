@@ -6,6 +6,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'app/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/config/app_environment.dart';
 import 'firebase_options.dart';
 import 'firebase_options_dev.dart' as dev;
 import 'core/config/firebase_emulator_config.dart';
@@ -16,8 +17,10 @@ void main() async {
   // Use path-based URL strategy to remove # from URLs
   usePathUrlStrategy();
   WidgetsFlutterBinding.ensureInitialized();
+  // Use environment to determine Firebase config (not build mode)
+  // This allows release builds with dev Firebase config for dev deployments
   await Firebase.initializeApp(
-    options: kDebugMode
+    options: AppEnvironmentConfig.isDev
         ? dev.DefaultFirebaseOptions.currentPlatform
         : DefaultFirebaseOptions.currentPlatform,
   );
