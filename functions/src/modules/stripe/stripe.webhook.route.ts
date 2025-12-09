@@ -17,7 +17,6 @@ import {stripeSecretKey, stripeWebhookSecret} from "../../config/env.js";
 export const stripeWebhook = onRequest(
   {
     cors: true,
-    region: "us-central1",
     secrets: [stripeSecretKey, stripeWebhookSecret],
   },
   async (req, res) => {

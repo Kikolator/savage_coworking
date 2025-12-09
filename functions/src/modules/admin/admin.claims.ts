@@ -41,9 +41,7 @@ async function hasAnyAdmins(): Promise<boolean> {
  * @return {Promise<{success: boolean, uid: string, isAdmin: boolean}>}
  */
 export const setAdminClaim = onCall(
-  {
-    region: "us-central1",
-  },
+  {},
   async (request) => {
     // Require authentication
     if (!request.auth) {

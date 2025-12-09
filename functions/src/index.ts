@@ -16,7 +16,7 @@ import {setAdminClaim} from "./modules/admin/admin.claims.js";
 
 setGlobalOptions({
   maxInstances: 10,
-  region: "us-central1",
+  region: "europe-west1",
 });
 
 export {
