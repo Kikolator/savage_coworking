@@ -47,6 +47,43 @@ flutter run --debug
 cd functions && npm run serve
 ```
 
+## Building for Deployment
+
+The app supports two environments: `dev` and `prod`. The environment determines which Firebase project configuration is used.
+
+### Build Modes vs Environments
+
+- **Build Mode** (`--debug` or `--release`): Controls optimization level and debug features
+  - Debug: Unoptimized, includes debug tools, connects to emulators
+  - Release: Optimized, production-ready code
+
+- **Environment** (`--dart-define=ENV=dev|prod`): Controls which Firebase project to use
+  - Dev: Uses `firebase_options_dev.dart` (dev Firebase project)
+  - Prod: Uses `firebase_options.dart` (prod Firebase project)
+
+### Build Commands
+
+```bash
+# Build for dev environment (release mode with dev Firebase config)
+flutter build web --release --dart-define=ENV=dev
+
+# Build for prod environment (release mode with prod Firebase config)
+flutter build web --release --dart-define=ENV=prod
+
+# Debug builds default to dev environment (no --dart-define needed)
+flutter run --debug  # Uses dev Firebase config automatically
+```
+
+### Default Behavior
+
+- **Debug builds**: Automatically use `dev` environment (connects to emulators)
+- **Release builds**: Automatically use `prod` environment (unless overridden with `--dart-define=ENV=dev`)
+
+This allows you to:
+- Test production-optimized builds with dev Firebase config
+- Deploy release builds to dev/staging environments
+- Keep debug builds simple (no need to specify environment)
+
 Helpful scripts:
 - `flutter test` – widget/unit tests
 - `flutter analyze` – static analysis
