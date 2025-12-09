@@ -2,16 +2,16 @@ import {onRequest} from "firebase-functions/v2/https";
 import {
   processWebhookEvent,
   verifyWebhookSignature,
-} from "./stripe.webhook";
-import {stripeSecretKey, stripeWebhookSecret} from "../../config/env";
+} from "./stripe.webhook.js";
+import {stripeSecretKey, stripeWebhookSecret} from "../../config/env.js";
 
 /**
  * Standalone Stripe webhook endpoint.
  * Handles raw request body for signature verification.
- * 
+ *
  * This function is separate from the Express-based subscription API
  * to ensure proper raw body handling for Stripe signature verification.
- * 
+ *
  * Webhook URL: /stripeWebhook
  */
 export const stripeWebhook = onRequest(
@@ -32,10 +32,14 @@ export const stripeWebhook = onRequest(
       // Get raw body for signature verification
       // In Firebase Functions v2, try multiple methods to access raw body
       let payload: string;
-      
+
       // Method 1: Check if rawBody is available (Firebase Functions v2)
-      if ((req as any).rawBody) {
-        payload = (req as any).rawBody.toString("utf8");
+      interface RequestWithRawBody {
+        rawBody?: Buffer;
+      }
+      const reqWithBody = req as RequestWithRawBody;
+      if (reqWithBody.rawBody) {
+        payload = reqWithBody.rawBody.toString("utf8");
       } else if (Buffer.isBuffer(req.body)) {
         // Method 2: Body is already a Buffer
         payload = req.body.toString("utf8");
@@ -67,16 +71,16 @@ export const stripeWebhook = onRequest(
         code: error.code,
         error: err,
       });
-      
+
       // Return appropriate status code
       // 400 for client errors (bad request, validation), 500 for server errors
       const statusCode = error.code === "ACTIVE_SUBSCRIPTION_EXISTS" ||
         error.code === "PLAN_NOT_FOUND" ||
         error.message?.includes("Missing") ||
-        error.message?.includes("not found")
-        ? 400
-        : 500;
-      
+        error.message?.includes("not found") ?
+        400 :
+        500;
+
       res.status(statusCode).json({
         message: error.message || "Webhook processing failed",
         received: false,

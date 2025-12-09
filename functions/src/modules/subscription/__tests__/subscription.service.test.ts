@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 import {Timestamp} from "firebase-admin/firestore";
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 import {
@@ -20,14 +19,14 @@ import {
   getSubscriptionsByUserId,
   updatePlan,
   updateSubscription,
-} from "../subscription.service";
-import * as subscriptionRepo from "../subscription.repository";
+} from "../subscription.service.js";
+import * as subscriptionRepo from "../subscription.repository.js";
 import {
   Subscription,
   SubscriptionCreateDto,
   SubscriptionPlan,
   SubscriptionPlanCreateDto,
-} from "../subscription.types";
+} from "../subscription.types.js";
 
 vi.mock("../subscription.repository", () => ({
   findSubscriptionById: vi.fn(),
@@ -340,7 +339,8 @@ describe("subscription.service", () => {
       expect(result.status).toBe("active");
     });
 
-    // Note: Hours usage validation is now handled in Usage collection, not subscriptions
+    // Note: Hours usage validation is now handled in Usage collection,
+    // not subscriptions
   });
 
   describe("cancelSubscription", () => {
@@ -391,7 +391,8 @@ describe("subscription.service", () => {
     );
   });
 
-  // Note: updateSubscriptionHours has been removed - hours are now tracked in Usage collection
+  // Note: updateSubscriptionHours has been removed -
+  // hours are now tracked in Usage collection
 
   describe("deleteSubscription", () => {
     it("deletes subscription successfully", async () => {

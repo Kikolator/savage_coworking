@@ -1,18 +1,18 @@
 import {onCall, HttpsError} from "firebase-functions/v2/https";
-import * as stripeService from "../stripe/stripe.service";
-import * as subscriptionRepo from "./subscription.repository";
-import * as subscriptionService from "./subscription.service";
-import {CheckoutSessionParams} from "../stripe/stripe.types";
+import * as stripeService from "../stripe/stripe.service.js";
+import * as subscriptionRepo from "./subscription.repository.js";
+import * as subscriptionService from "./subscription.service.js";
+import {CheckoutSessionParams} from "../stripe/stripe.types.js";
 import {
   SubscriptionPlanCreateDto,
   SubscriptionPlanUpdateDto,
-} from "./subscription.types";
-import {stripeSecretKey} from "../../config/env";
+} from "./subscription.types.js";
+import {stripeSecretKey} from "../../config/env.js";
 
 /**
  * Note: Stripe webhook handling has been moved to a separate function
- * (stripeWebhook) to ensure proper raw body handling for signature verification.
- * See: functions/src/modules/stripe/stripe.webhook.route.ts
+ * (stripeWebhook) to ensure proper raw body handling for signature
+ * verification. See: functions/src/modules/stripe/stripe.webhook.route.ts
  */
 
 /**
@@ -88,7 +88,9 @@ export const createCheckoutSession = onCall(
 
     // Build success and cancel URLs
     const defaultBaseUrl = baseUrl || "https://your-app.com";
-    const successUrl = `${defaultBaseUrl}/subscriptions?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl =
+      `${defaultBaseUrl}/subscriptions?checkout=success&` +
+      "session_id={CHECKOUT_SESSION_ID}";
     const cancelUrl = `${defaultBaseUrl}/subscriptions?checkout=cancelled`;
 
     // Create checkout session

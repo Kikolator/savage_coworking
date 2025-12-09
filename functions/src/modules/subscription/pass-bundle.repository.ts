@@ -1,11 +1,12 @@
-import {Timestamp} from "firebase-admin/firestore";
-import {db} from "../../config/firebaseAdmin";
+import {Timestamp, QueryDocumentSnapshot} from "firebase-admin/firestore";
+import {db} from "../../config/firebaseAdmin.js";
 import {
   PASS_BUNDLES_COLLECTION,
   PassBundle,
   PassBundleCreateDto,
   PassBundleUpdateDto,
-} from "./subscription.types";
+  Access,
+} from "./subscription.types.js";
 
 const passBundlesCol = () => db().collection(PASS_BUNDLES_COLLECTION);
 
@@ -30,7 +31,7 @@ export async function findPassBundlesByUserId(
     .where("userId", "==", userId)
     .orderBy("createdAt", "desc")
     .get();
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...(doc.data() as Omit<PassBundle, "id">),
   }));
@@ -47,7 +48,7 @@ export async function findActivePassBundlesByUserId(
     .where("status", "==", "active")
     .orderBy("createdAt", "desc")
     .get();
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...(doc.data() as Omit<PassBundle, "id">),
   }));
@@ -58,7 +59,7 @@ export async function findActivePassBundlesByUserId(
  */
 export async function createPassBundle(
   dto: PassBundleCreateDto,
-  planQuota: {dayPassCredits: number; access: any},
+  planQuota: {dayPassCredits: number; access: Access},
 ): Promise<PassBundle> {
   const now = Timestamp.now();
   const bundle: Omit<PassBundle, "id"> = {

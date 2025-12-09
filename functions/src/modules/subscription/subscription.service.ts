@@ -1,5 +1,5 @@
-import * as subscriptionRepo from "./subscription.repository";
-import * as stripeService from "../stripe/stripe.service";
+import * as subscriptionRepo from "./subscription.repository.js";
+import * as stripeService from "../stripe/stripe.service.js";
 import {
   Subscription,
   SubscriptionCreateDto,
@@ -8,7 +8,7 @@ import {
   SubscriptionPlanCreateDto,
   SubscriptionPlanUpdateDto,
   SubscriptionStatus,
-} from "./subscription.types";
+} from "./subscription.types.js";
 
 /**
  * Error thrown when subscription is not found.
@@ -133,7 +133,10 @@ function validateBilling(dto: SubscriptionPlanCreateDto): void {
   if (dto.billing.type === "recurring" && !dto.billing.period) {
     throw new Error("BILLING_PERIOD_REQUIRED_FOR_RECURRING");
   }
-  if (dto.billing.intervalCount !== undefined && dto.billing.intervalCount < 1) {
+  if (
+    dto.billing.intervalCount !== undefined &&
+    dto.billing.intervalCount < 1
+  ) {
     throw new Error("INTERVAL_COUNT_MUST_BE_POSITIVE");
   }
 }
@@ -311,7 +314,7 @@ export async function createPlan(
 
   // Check if plan name is already taken
   const allPlans = await subscriptionRepo.findAllPlans();
-  const nameExists = allPlans.some((plan) => plan.name === dto.name);
+  const nameExists = allPlans.some((plan: SubscriptionPlan) => plan.name === dto.name);
   if (nameExists) {
     throw new PlanNameTakenError();
   }
@@ -323,9 +326,9 @@ export async function createPlan(
   if (!stripeProductId || !stripePriceId) {
     try {
       const interval =
-        dto.billing.type === "recurring"
-          ? (dto.billing.period === "month" ? "month" : "one_off")
-          : "one_off";
+        dto.billing.type === "recurring" ?
+          (dto.billing.period === "month" ? "month" : "one_off") :
+          "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name,
         price: dto.pricing.amount,
@@ -413,7 +416,7 @@ export async function updatePlan(
   if (dto.name && dto.name !== existing.name) {
     const allPlans = await subscriptionRepo.findAllPlans();
     const nameExists = allPlans.some(
-      (plan) => plan.id !== id && plan.name === dto.name,
+      (plan: SubscriptionPlan) => plan.id !== id && plan.name === dto.name,
     );
     if (nameExists) {
       throw new PlanNameTakenError();
@@ -459,11 +462,11 @@ export async function updatePlan(
   if ((priceChanged || currencyChanged) && existingProductId) {
     try {
       const interval =
-        (dto.billing ?? existing.billing).type === "recurring"
-          ? ((dto.billing ?? existing.billing).period === "month"
-              ? "month"
-              : "one_off")
-          : "one_off";
+        (dto.billing ?? existing.billing).type === "recurring" ?
+          ((dto.billing ?? existing.billing).period === "month" ?
+            "month" :
+            "one_off") :
+          "one_off";
       newStripePriceId = await stripeService.createStripePrice({
         productId: existingProductId,
         price: dto.pricing?.amount ?? existing.pricing.amount,
@@ -483,9 +486,9 @@ export async function updatePlan(
   if (billingChanged && dto.billing) {
     try {
       const interval =
-        dto.billing.type === "recurring"
-          ? (dto.billing.period === "month" ? "month" : "one_off")
-          : "one_off";
+        dto.billing.type === "recurring" ?
+          (dto.billing.period === "month" ? "month" : "one_off") :
+          "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name ?? existing.name,
         price: dto.pricing?.amount ?? existing.pricing.amount,
@@ -503,7 +506,8 @@ export async function updatePlan(
     }
   }
 
-  // If plan doesn't have Stripe IDs but price/billing is being updated, create both
+  // If plan doesn't have Stripe IDs but price/billing is being updated,
+  // create both
   if (
     !existingProductId &&
     (priceChanged || currencyChanged || billingChanged)
@@ -511,9 +515,9 @@ export async function updatePlan(
     try {
       const billing = dto.billing ?? existing.billing;
       const interval =
-        billing.type === "recurring"
-          ? (billing.period === "month" ? "month" : "one_off")
-          : "one_off";
+        billing.type === "recurring" ?
+          (billing.period === "month" ? "month" : "one_off") :
+          "one_off";
       const stripeResources = await stripeService.createStripeProductAndPrice({
         name: dto.name ?? existing.name,
         price: dto.pricing?.amount ?? existing.pricing.amount,
@@ -547,8 +551,8 @@ export async function updatePlan(
     // (Stripe resources created but not linked)
     if (newStripePriceId || newStripeProductId) {
       console.warn(
-        `Plan update failed after Stripe operations. ` +
-          `Stripe resources may need manual cleanup: ` +
+        "Plan update failed after Stripe operations. " +
+          "Stripe resources may need manual cleanup: " +
           `productId=${newStripeProductId}, priceId=${newStripePriceId}`,
       );
     }
@@ -571,8 +575,10 @@ export async function deletePlan(id: string): Promise<void> {
   const activeSubscriptions =
     await subscriptionRepo.findSubscriptionsByPlanId(id);
   if (activeSubscriptions.length > 0) {
+    const count = activeSubscriptions.length;
     throw new Error(
-      `Cannot delete plan with ${activeSubscriptions.length} active subscription(s). Deactivate the plan instead.`,
+      `Cannot delete plan with ${count} active subscription(s). ` +
+        "Deactivate the plan instead.",
     );
   }
 
@@ -587,8 +593,9 @@ export async function deletePlan(id: string): Promise<void> {
         error instanceof Error ? error.message : String(error);
       // Log warning but continue with deletion
       // (Stripe product may already be archived or deleted)
+      const productId = existing.external.stripeProductId;
       console.warn(
-        `Failed to archive Stripe product ${existing.external.stripeProductId}: ${errorMessage}`,
+        `Failed to archive Stripe product ${productId}: ${errorMessage}`,
       );
     }
   }

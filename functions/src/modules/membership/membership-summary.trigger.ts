@@ -1,5 +1,5 @@
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
-import {updateUserMembershipSummary} from "./membership-summary.service";
+import {updateUserMembershipSummary} from "./membership-summary.service.js";
 
 /**
  * Trigger to update membership summary when subscription changes.

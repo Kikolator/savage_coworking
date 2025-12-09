@@ -1,11 +1,11 @@
 import Stripe from "stripe";
 import {Timestamp} from "firebase-admin/firestore";
-import {db} from "../../config/firebaseAdmin";
-import {getEnvConfig} from "../../config/env";
+import {db} from "../../config/firebaseAdmin.js";
+import {getEnvConfig} from "../../config/env.js";
 import {
   CheckoutSessionParams,
   CheckoutSessionResponse,
-} from "./stripe.types";
+} from "./stripe.types.js";
 
 const STRIPE_CUSTOMERS_COLLECTION = "stripeCustomers";
 
@@ -87,7 +87,8 @@ export async function createCheckoutSession(
     // For now, we'll require stripePriceId for both modes
     // This can be enhanced later
     throw new Error(
-      "Payment mode requires stripePriceId. Product-only payments not yet supported.",
+      "Payment mode requires stripePriceId. " +
+        "Product-only payments not yet supported.",
     );
   } else {
     throw new Error(

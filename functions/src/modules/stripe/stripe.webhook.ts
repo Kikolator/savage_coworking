@@ -1,9 +1,9 @@
 import Stripe from "stripe";
 import {Timestamp} from "firebase-admin/firestore";
-import {getEnvConfig} from "../../config/env";
-import * as subscriptionService from "../subscription/subscription.service";
-import * as subscriptionRepo from "../subscription/subscription.repository";
-import {BillingType, BillingPeriod} from "../subscription/subscription.types";
+import {getEnvConfig} from "../../config/env.js";
+import * as subscriptionService from "../subscription/subscription.service.js";
+import * as subscriptionRepo from "../subscription/subscription.repository.js";
+import {BillingType, BillingPeriod} from "../subscription/subscription.types.js";
 
 /**
  * Calculates period start and end dates based on billing type and period.
@@ -59,9 +59,9 @@ async function handleCheckoutSessionCompleted(
 
   // Get customer ID
   const customerId =
-    typeof session.customer === "string"
-      ? session.customer
-      : session.customer?.id;
+    typeof session.customer === "string" ?
+      session.customer :
+      session.customer?.id;
 
   if (!customerId) {
     throw new Error("Missing customer ID in checkout session");
@@ -78,15 +78,19 @@ async function handleCheckoutSessionCompleted(
   // For subscriptions, fetch actual period dates from Stripe
   if (session.mode === "subscription" && session.subscription) {
     const subscriptionId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : session.subscription.id;
+      typeof session.subscription === "string" ?
+        session.subscription :
+        session.subscription.id;
 
     try {
       // Fetch subscription to get accurate period dates
-      const stripeSubscription = await stripe.subscriptions.retrieve(
-        subscriptionId,
-      ) as any;
+      const stripeSubscriptionResponse =
+        await stripe.subscriptions.retrieve(subscriptionId);
+      const stripeSubscription = stripeSubscriptionResponse as unknown as
+        Stripe.Subscription & {
+          current_period_start: number;
+          current_period_end: number;
+        };
 
       if (
         stripeSubscription.current_period_start &&
@@ -109,7 +113,8 @@ async function handleCheckoutSessionCompleted(
       }
     } catch (error) {
       console.error(
-        `Failed to fetch subscription ${subscriptionId}, using calculated dates:`,
+        `Failed to fetch subscription ${subscriptionId}, ` +
+          "using calculated dates:",
         error,
       );
       // Fallback to calculated dates on error
@@ -144,12 +149,13 @@ async function handleCheckoutSessionCompleted(
   // Add Stripe subscription ID for recurring subscriptions
   if (session.mode === "subscription" && session.subscription) {
     const subscriptionId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : session.subscription.id;
+      typeof session.subscription === "string" ?
+        session.subscription :
+        session.subscription.id;
     subscriptionDto.stripeSubscriptionId = subscriptionId;
   }
-  // Note: One-off payments (payment mode) should create PassBundles, not Subscriptions
+  // Note: One-off payments (payment mode) should create PassBundles,
+  // not Subscriptions
 
   // Create subscription (service will validate and check for existing)
   // Status will be automatically set to "active" since payment was successful
@@ -176,9 +182,10 @@ async function handleCheckoutSessionCompleted(
 async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
 ): Promise<void> {
-  const existing = await subscriptionRepo.findSubscriptionByStripeSubscriptionId(
-    subscription.id,
-  );
+  const existing =
+    await subscriptionRepo.findSubscriptionByStripeSubscriptionId(
+      subscription.id,
+    );
 
   if (!existing) {
     // Subscription not found, might be from another system
@@ -212,7 +219,10 @@ async function handleSubscriptionUpdated(
   }
 
   // Update period dates
-  const sub = subscription as any;
+  const sub = subscription as Stripe.Subscription & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
   if (sub.current_period_start && sub.current_period_end) {
     updates.currentPeriodStart = Timestamp.fromMillis(
       sub.current_period_start * 1000,
@@ -238,9 +248,10 @@ async function handleSubscriptionUpdated(
 async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
 ): Promise<void> {
-  const existing = await subscriptionRepo.findSubscriptionByStripeSubscriptionId(
-    subscription.id,
-  );
+  const existing =
+    await subscriptionRepo.findSubscriptionByStripeSubscriptionId(
+      subscription.id,
+    );
 
   if (!existing) {
     return;
@@ -263,25 +274,25 @@ export async function processWebhookEvent(
 ): Promise<void> {
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutSessionCompleted(session);
-        break;
-      }
-      case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionUpdated(subscription);
-        break;
-      }
-      case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(subscription);
-        break;
-      }
-      default:
-        // Log unhandled event types for monitoring
-        console.log(`Unhandled webhook event type: ${event.type}`);
-        break;
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      await handleCheckoutSessionCompleted(session);
+      break;
+    }
+    case "customer.subscription.updated": {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionUpdated(subscription);
+      break;
+    }
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      await handleSubscriptionDeleted(subscription);
+      break;
+    }
+    default:
+      // Log unhandled event types for monitoring
+      console.log(`Unhandled webhook event type: ${event.type}`);
+      break;
     }
   } catch (error) {
     // Log error with event context for debugging
