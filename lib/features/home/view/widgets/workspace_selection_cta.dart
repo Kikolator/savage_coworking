@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/debug/debug_utils.dart';
 import '../../../auth/providers/auth_providers.dart';
 import '../../../hot_desk_booking/models/workspace.dart';
 import '../../../hot_desk_booking/providers/workspace_providers.dart';
@@ -143,7 +144,23 @@ class _WorkspaceSelectionDialogState
   Future<void> _selectWorkspace(Workspace workspace) async {
     final authState = ref.read(authViewModelProvider);
     final user = authState.user;
-    if (user == null) return;
+    if (user == null) {
+      debugWarning(
+        'WorkspaceSelectionCTA',
+        'Attempted to select workspace but user is null',
+      );
+      return;
+    }
+
+    debugLog(
+      'WorkspaceSelectionCTA',
+      'User initiated workspace selection',
+      {
+        'userId': user.id,
+        'workspaceId': workspace.id,
+        'workspaceName': workspace.name,
+      },
+    );
 
     setState(() => _isSubmitting = true);
 
@@ -152,6 +169,11 @@ class _WorkspaceSelectionDialogState
       if (!mounted) return;
 
       if (error != null) {
+        debugError(
+          'WorkspaceSelectionCTA',
+          'Workspace selection failed',
+          error,
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to select workspace: $error'),
@@ -159,6 +181,15 @@ class _WorkspaceSelectionDialogState
           ),
         );
       } else {
+        debugLog(
+          'WorkspaceSelectionCTA',
+          'Workspace selection completed successfully',
+          {
+            'userId': user.id,
+            'workspaceId': workspace.id,
+            'workspaceName': workspace.name,
+          },
+        );
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -167,7 +198,13 @@ class _WorkspaceSelectionDialogState
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugError(
+        'WorkspaceSelectionCTA',
+        'Unexpected error during workspace selection',
+        e,
+        stackTrace,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/debug/debug_utils.dart';
 import '../../../auth/providers/auth_providers.dart';
 import '../../../hot_desk_booking/providers/workspace_providers.dart';
 import '../../providers/workspace_selection_providers.dart';
@@ -145,9 +146,24 @@ class WorkspaceSwitcherDialog extends ConsumerWidget {
                         )
                       : null,
                   onTap: () async {
+                    debugLog(
+                      'WorkspaceSwitcherDialog',
+                      'User initiated workspace switch',
+                      {
+                        'userId': user.id,
+                        'workspaceId': workspace.id,
+                        'workspaceName': workspace.name,
+                      },
+                    );
+
                     final error = await switchWorkspace(ref, user.id, workspace.id);
                     if (context.mounted) {
                       if (error != null) {
+                        debugError(
+                          'WorkspaceSwitcherDialog',
+                          'Workspace switch failed',
+                          error,
+                        );
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(error),
@@ -155,6 +171,15 @@ class WorkspaceSwitcherDialog extends ConsumerWidget {
                           ),
                         );
                       } else {
+                        debugLog(
+                          'WorkspaceSwitcherDialog',
+                          'Workspace switch completed successfully',
+                          {
+                            'userId': user.id,
+                            'workspaceId': workspace.id,
+                            'workspaceName': workspace.name,
+                          },
+                        );
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

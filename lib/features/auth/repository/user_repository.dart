@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/debug/debug_utils.dart';
 import '../models/user.dart';
 
 class UserRepository {
@@ -99,12 +100,45 @@ class UserRepository {
   /// Updates the selected workspace ID for a user.
   /// Automatically updates the updatedAt timestamp.
   Future<void> updateSelectedWorkspace(String id, String? workspaceId) async {
+    debugLog(
+      'UserRepository',
+      'Updating selected workspace',
+      {'userId': id, 'workspaceId': workspaceId},
+    );
+
     final updates = <String, dynamic>{
       'updatedAt': Timestamp.fromDate(DateTime.now().toUtc()),
       'selectedWorkspaceId': workspaceId,
     };
 
-    await _collection.doc(id).update(updates);
+    try {
+      debugLog(
+        'UserRepository',
+        'Executing Firestore update',
+        {
+          'collection': 'users',
+          'documentId': id,
+          'updates': updates,
+        },
+      );
+
+      await _collection.doc(id).update(updates);
+
+      debugLog(
+        'UserRepository',
+        'Successfully updated selected workspace',
+        {'userId': id, 'workspaceId': workspaceId},
+      );
+    } catch (e, stackTrace) {
+      debugError(
+        'UserRepository',
+        'Failed to update selected workspace in Firestore',
+        e,
+        stackTrace,
+      );
+      // Re-throw to allow service layer to handle
+      rethrow;
+    }
   }
 }
 

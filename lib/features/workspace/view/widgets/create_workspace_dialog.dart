@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/debug/debug_utils.dart';
 import '../../../hot_desk_booking/providers/workspace_providers.dart';
 import '../../../hot_desk_booking/providers/hot_desk_booking_providers.dart';
 import '../../../auth/providers/auth_providers.dart';
@@ -146,10 +147,33 @@ class _CreateWorkspaceDialogState extends ConsumerState<CreateWorkspaceDialog> {
       final authState = ref.read(authViewModelProvider);
       final userId = authState.user?.id;
       if (userId != null && mounted) {
+        debugLog(
+          'CreateWorkspaceDialog',
+          'Auto-selecting newly created workspace',
+          {
+            'userId': userId,
+            'workspaceId': workspace.id,
+            'workspaceName': workspace.name,
+          },
+        );
         await switchWorkspace(ref, userId, workspace.id);
+        debugLog(
+          'CreateWorkspaceDialog',
+          'Successfully auto-selected newly created workspace',
+          {
+            'userId': userId,
+            'workspaceId': workspace.id,
+            'workspaceName': workspace.name,
+          },
+        );
       }
-    } catch (e) {
-      debugPrint('Failed to auto-select workspace: $e');
+    } catch (e, stackTrace) {
+      debugError(
+        'CreateWorkspaceDialog',
+        'Failed to auto-select newly created workspace',
+        e,
+        stackTrace,
+      );
       // Continue even if auto-select fails
     }
 
