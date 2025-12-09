@@ -24,6 +24,7 @@ import {stripeSecretKey} from "../../config/env.js";
  */
 export const createCheckoutSession = onCall(
   {
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -116,6 +117,7 @@ export const createCheckoutSession = onCall(
  */
 export const createPlan = onCall(
   {
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -147,6 +149,7 @@ export const createPlan = onCall(
  */
 export const updatePlan = onCall(
   {
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -187,6 +190,7 @@ export const updatePlan = onCall(
  */
 export const deletePlan = onCall(
   {
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
