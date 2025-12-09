@@ -37,7 +37,7 @@ class UserMenuButton extends ConsumerWidget {
       tooltip: 'User menu',
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       offset: const Offset(0, 12),
-      onSelected: (action) => _handleSelected(context, action),
+      onSelected: (action) => _handleSelected(context, ref, action),
       itemBuilder: (context) {
         final items = <PopupMenuEntry<_UserMenuAction>>[
           PopupMenuItem<_UserMenuAction>(
@@ -49,10 +49,7 @@ class UserMenuButton extends ConsumerWidget {
                   user.displayName ?? 'Signed in',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                Text(
-                  user.email,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                Text(user.email, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -74,7 +71,8 @@ class UserMenuButton extends ConsumerWidget {
         }
 
         if (user.isAdmin) {
-          final workspaceName = selectedWorkspaceAsync.valueOrNull?.name ?? 'No workspace';
+          final workspaceName =
+              selectedWorkspaceAsync.valueOrNull?.name ?? 'No workspace';
           items.add(
             PopupMenuItem<_UserMenuAction>(
               value: _UserMenuAction.switchWorkspace,
@@ -122,21 +120,26 @@ class UserMenuButton extends ConsumerWidget {
       },
       child: CircleAvatar(
         radius: 18,
-        backgroundImage:
-            user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+        backgroundImage: user.photoUrl != null
+            ? NetworkImage(user.photoUrl!)
+            : null,
         child: user.photoUrl == null
             ? Text(
                 _initials.toUpperCase(),
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
               )
             : null,
       ),
     );
   }
 
-  void _handleSelected(BuildContext context, _UserMenuAction action) {
+  void _handleSelected(
+    BuildContext context,
+    WidgetRef ref,
+    _UserMenuAction action,
+  ) {
     switch (action) {
       case _UserMenuAction.admin:
         onAdminNavigate?.call();
