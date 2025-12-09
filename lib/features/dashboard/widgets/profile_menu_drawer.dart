@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../../../app/router/app_route.dart';
+import '../../../core/services/firebase_functions_service.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../auth/viewmodel/auth_view_model.dart';
 import '../../subscription/providers/subscription_providers.dart';
 
 class ProfileMenuDrawer extends ConsumerWidget {
@@ -130,9 +132,28 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 context,
                 icon: Icons.admin_panel_settings,
                 title: 'Set Admin (DEBUG)',
-                onTap: () {
+                onTap: () async {
+                  // Get root navigator context before closing drawer
+                  final rootContext = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  // Read providers BEFORE closing drawer (while ref is still valid)
+                  final functionsService = ref.read(
+                    firebaseFunctionsServiceProvider,
+                  );
+                  final authViewModel = ref.read(
+                    authViewModelProvider.notifier,
+                  );
+                  // Close drawer first
                   Navigator.pop(context);
-                  _setCurrentUserAsAdmin(context, ref, user);
+                  // Then show dialog with root context
+                  await _setCurrentUserAsAdmin(
+                    rootContext,
+                    user,
+                    functionsService,
+                    authViewModel,
+                  );
                 },
               ),
             ],
@@ -263,9 +284,28 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 context,
                 icon: CupertinoIcons.person_badge_plus,
                 title: 'Set Admin (DEBUG)',
-                onTap: () {
+                onTap: () async {
+                  // Get root navigator context before closing drawer
+                  final rootContext = Navigator.of(
+                    context,
+                    rootNavigator: true,
+                  ).context;
+                  // Read providers BEFORE closing drawer (while ref is still valid)
+                  final functionsService = ref.read(
+                    firebaseFunctionsServiceProvider,
+                  );
+                  final authViewModel = ref.read(
+                    authViewModelProvider.notifier,
+                  );
+                  // Close drawer first
                   Navigator.pop(context);
-                  _setCurrentUserAsAdmin(context, ref, user);
+                  // Then show dialog with root context
+                  await _setCurrentUserAsAdmin(
+                    rootContext,
+                    user,
+                    functionsService,
+                    authViewModel,
+                  );
                 },
               ),
             ],
@@ -357,13 +397,17 @@ class ProfileMenuDrawer extends ConsumerWidget {
 
   Future<void> _setCurrentUserAsAdmin(
     BuildContext context,
-    WidgetRef ref,
     user,
+    FirebaseFunctionsService functionsService,
+    AuthViewModel authViewModel,
   ) async {
+    // Ensure we're using root navigator context that won't be unmounted
+    final rootContext = Navigator.of(context, rootNavigator: true).context;
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: rootContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Set Admin Claim (DEBUG)'),
         content: Text(
           'This will set admin custom claim for:\n\n'
@@ -374,13 +418,13 @@ class ProfileMenuDrawer extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             child: const Text('Set Admin'),
           ),
@@ -390,9 +434,9 @@ class ProfileMenuDrawer extends ConsumerWidget {
 
     if (confirmed != true) return;
 
-    // Show loading indicator
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    // Show loading indicator using root context
+    if (rootContext.mounted) {
+      ScaffoldMessenger.of(rootContext).showSnackBar(
         const SnackBar(
           content: Row(
             children: [
@@ -411,18 +455,16 @@ class ProfileMenuDrawer extends ConsumerWidget {
     }
 
     try {
-      final functionsService = ref.read(firebaseFunctionsServiceProvider);
-
       final result = await functionsService.callFunction<Map<String, dynamic>>(
         functionName: 'setAdminClaim',
         data: {'uid': user.id, 'isAdmin': true},
       );
 
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      if (rootContext.mounted) {
+        ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
 
         if (result['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(rootContext).showSnackBar(
             SnackBar(
               content: const Text(
                 'Admin claim set successfully! Please log out and back in for it to take effect.',
@@ -433,16 +475,16 @@ class ProfileMenuDrawer extends ConsumerWidget {
                 label: 'Logout',
                 textColor: Colors.white,
                 onPressed: () async {
-                  await ref.read(authViewModelProvider.notifier).logout();
-                  if (context.mounted) {
-                    context.go('/auth');
+                  await authViewModel.logout();
+                  if (rootContext.mounted) {
+                    GoRouter.of(rootContext).go('/auth');
                   }
                 },
               ),
             ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(rootContext).showSnackBar(
             const SnackBar(
               content: Text('Failed to set admin claim'),
               backgroundColor: Colors.red,
@@ -452,9 +494,9 @@ class ProfileMenuDrawer extends ConsumerWidget {
         }
       }
     } on FirebaseFunctionsException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (rootContext.mounted) {
+        ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
+        ScaffoldMessenger.of(rootContext).showSnackBar(
           SnackBar(
             content: Text('Error: ${e.message ?? e.code}'),
             backgroundColor: Colors.red,
@@ -463,9 +505,9 @@ class ProfileMenuDrawer extends ConsumerWidget {
         );
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (rootContext.mounted) {
+        ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
+        ScaffoldMessenger.of(rootContext).showSnackBar(
           SnackBar(
             content: Text('Unexpected error: $e'),
             backgroundColor: Colors.red,

@@ -13,11 +13,20 @@ class FirebaseFunctionsService {
   late final FirebaseFunctions _functions;
 
   void _initialize() {
-    _functions = FirebaseFunctions.instance;
+    _functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
 
-    // Connect to emulator in debug mode
+    // Don't connect here if already connected globally
+    // The firebase_emulator_config.dart handles this
+    // Only connect if not already connected
     if (kDebugMode) {
-      _connectToEmulator();
+      try {
+        // Check if already connected by trying to get the instance
+        // If this throws, we need to connect
+        _connectToEmulator();
+      } catch (e) {
+        // Already connected or connection failed
+        debugPrint('FirebaseFunctionsService: Emulator connection: $e');
+      }
     }
   }
 
@@ -73,9 +82,23 @@ class FirebaseFunctionsService {
     Map<String, dynamic>? data,
   }) async {
     try {
+      // For emulator, we need to use the instance without region
+      // For production, we might need to specify region
       final callable = _functions.httpsCallable(functionName);
 
+      if (kDebugMode) {
+        debugPrint(
+          'FirebaseFunctionsService: Calling function $functionName with data: $data',
+        );
+      }
+
       final result = await callable.call(data);
+
+      if (kDebugMode) {
+        debugPrint(
+          'FirebaseFunctionsService: Function $functionName succeeded',
+        );
+      }
 
       // Extract data from HttpsCallableResult
       return result.data as T;
@@ -85,6 +108,7 @@ class FirebaseFunctionsService {
           'FirebaseFunctionsService: Function $functionName failed: '
           '${e.code} - ${e.message}',
         );
+        debugPrint('FirebaseFunctionsService: Exception details: ${e.details}');
       }
       rethrow;
     } catch (e) {

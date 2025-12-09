@@ -22,7 +22,7 @@ void main() async {
         : DefaultFirebaseOptions.currentPlatform,
   );
   connectFirebaseEmulators(
-    useAuthEmulator: false,
+    useAuthEmulator: kDebugMode,
     useFirestoreEmulator: kDebugMode,
     useStorageEmulator: kDebugMode,
     useFunctionsEmulator: kDebugMode,

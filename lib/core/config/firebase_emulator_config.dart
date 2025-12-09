@@ -65,7 +65,7 @@ void connectFirebaseEmulators({
       // Note: This is also handled by FirebaseFunctionsService, but we can
       // set it here for consistency
       try {
-        final functions = FirebaseFunctions.instance;
+        final functions = FirebaseFunctions.instanceFor(region: 'europe-west1');
         functions.useFunctionsEmulator(host, 5005);
       } catch (e) {
         debugPrint('Failed to connect to Functions emulator: $e');
