@@ -3,7 +3,10 @@ import {Timestamp} from "firebase-admin/firestore";
 import {getEnvConfig} from "../../config/env.js";
 import * as subscriptionService from "../subscription/subscription.service.js";
 import * as subscriptionRepo from "../subscription/subscription.repository.js";
-import {BillingType, BillingPeriod} from "../subscription/subscription.types.js";
+import {
+  BillingType,
+  BillingPeriod,
+} from "../subscription/subscription.types.js";
 
 /**
  * Calculates period start and end dates based on billing type and period.

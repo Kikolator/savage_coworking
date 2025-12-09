@@ -314,7 +314,9 @@ export async function createPlan(
 
   // Check if plan name is already taken
   const allPlans = await subscriptionRepo.findAllPlans();
-  const nameExists = allPlans.some((plan: SubscriptionPlan) => plan.name === dto.name);
+  const nameExists = allPlans.some(
+    (plan: SubscriptionPlan) => plan.name === dto.name,
+  );
   if (nameExists) {
     throw new PlanNameTakenError();
   }
