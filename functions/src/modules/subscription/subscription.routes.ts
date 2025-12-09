@@ -1,101 +1,19 @@
-import express, {Request, Response, Router} from "express";
-import {onRequest, onCall, HttpsError} from "firebase-functions/v2/https";
-import * as stripeService from "../stripe/stripe.service";
-import {
-  processWebhookEvent,
-  verifyWebhookSignature,
-} from "../stripe/stripe.webhook";
-import * as subscriptionRepo from "./subscription.repository";
-import * as subscriptionService from "./subscription.service";
-import {CheckoutSessionParams} from "../stripe/stripe.types";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import * as stripeService from "../stripe/stripe.service.js";
+import * as subscriptionRepo from "./subscription.repository.js";
+import * as subscriptionService from "./subscription.service.js";
+import {CheckoutSessionParams} from "../stripe/stripe.types.js";
 import {
   SubscriptionPlanCreateDto,
   SubscriptionPlanUpdateDto,
-} from "./subscription.types";
-import {
-  stripeSecretKey,
-  stripeWebhookSecret,
-} from "../../config/env";
+} from "./subscription.types.js";
+import {stripeSecretKey} from "../../config/env.js";
 
 /**
- * Handles Stripe webhook events.
- * POST /api/subscriptions/webhook
- * Note: This route needs raw body for signature verification.
- * Firebase Functions v2 provides raw body in req.rawBody if configured.
+ * Note: Stripe webhook handling has been moved to a separate function
+ * (stripeWebhook) to ensure proper raw body handling for signature
+ * verification. See: functions/src/modules/stripe/stripe.webhook.route.ts
  */
-const webhookRouter = Router();
-webhookRouter.use(express.raw({type: "application/json"}));
-webhookRouter.post("/webhook", async (req: Request, res: Response) => {
-  try {
-    const signature = req.headers["stripe-signature"] as string;
-
-    if (!signature) {
-      res.status(400).json({message: "Missing stripe-signature header"});
-      return;
-    }
-
-    // Get raw body for signature verification
-    // In Firebase Functions v2, raw body is available as Buffer
-    const rawBody = req.body as Buffer;
-    if (!rawBody) {
-      res.status(400).json({message: "Missing request body"});
-      return;
-    }
-
-    const payload = rawBody.toString("utf8");
-
-    // Verify webhook signature
-    const event = verifyWebhookSignature(payload, signature);
-
-    // Process webhook event
-    await processWebhookEvent(event);
-
-    res.json({received: true});
-  } catch (err: unknown) {
-    // Enhanced error logging with event context
-    const error = err as {message?: string; code?: string};
-    console.error("Webhook processing error:", {
-      message: error.message,
-      code: error.code,
-      error: err,
-    });
-    
-    // Return appropriate status code
-    // 400 for client errors (bad request, validation), 500 for server errors
-    const statusCode = error.code === "ACTIVE_SUBSCRIPTION_EXISTS" ||
-      error.code === "PLAN_NOT_FOUND" ||
-      error.message?.includes("Missing") ||
-      error.message?.includes("not found")
-      ? 400
-      : 500;
-    
-    res.status(statusCode).json({
-      message: error.message || "Webhook processing failed",
-      received: false,
-    });
-  }
-});
-
-// Create router for webhook only
-const router = Router();
-router.use(webhookRouter);
-
-/**
- * HTTP function for subscription routes.
- * Webhook endpoint requires Stripe secrets for signature verification.
- */
-export const subscriptionApi = onRequest(
-  {
-    cors: true,
-    region: "us-central1",
-    secrets: [stripeSecretKey, stripeWebhookSecret],
-  },
-  (req, res) => {
-    router(req, res, () => {
-      res.status(404).json({message: "Route not found"});
-    });
-  },
-);
 
 /**
  * Callable function for creating a checkout session.
@@ -106,7 +24,7 @@ export const subscriptionApi = onRequest(
  */
 export const createCheckoutSession = onCall(
   {
-    region: "us-central1",
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -170,7 +88,9 @@ export const createCheckoutSession = onCall(
 
     // Build success and cancel URLs
     const defaultBaseUrl = baseUrl || "https://your-app.com";
-    const successUrl = `${defaultBaseUrl}/subscriptions?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+    const successUrl =
+      `${defaultBaseUrl}/subscriptions?checkout=success&` +
+      "session_id={CHECKOUT_SESSION_ID}";
     const cancelUrl = `${defaultBaseUrl}/subscriptions?checkout=cancelled`;
 
     // Create checkout session
@@ -197,7 +117,7 @@ export const createCheckoutSession = onCall(
  */
 export const createPlan = onCall(
   {
-    region: "us-central1",
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -229,7 +149,7 @@ export const createPlan = onCall(
  */
 export const updatePlan = onCall(
   {
-    region: "us-central1",
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {
@@ -270,7 +190,7 @@ export const updatePlan = onCall(
  */
 export const deletePlan = onCall(
   {
-    region: "us-central1",
+    region: "europe-west1",
     secrets: [stripeSecretKey],
   },
   async (request) => {

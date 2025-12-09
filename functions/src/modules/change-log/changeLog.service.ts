@@ -9,12 +9,12 @@ import {
   Change,
   FirestoreAuthEvent,
 } from "firebase-functions/v2/firestore";
-import * as changeLogRepository from "./changeLog.repository";
+import * as changeLogRepository from "./changeLog.repository.js";
 import {
   CHANGE_LOG_COLLECTION,
   ChangeLogEntry,
   ChangeLogOperation,
-} from "./changeLog.types";
+} from "./changeLog.types.js";
 
 type AnyDocumentEvent = FirestoreAuthEvent<
   Change<DocumentSnapshot> | undefined,

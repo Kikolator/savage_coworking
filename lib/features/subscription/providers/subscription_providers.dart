@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/firebase_functions_service.dart';
+import '../models/subscription.dart';
 import '../repository/subscription_repository.dart';
 import '../service/subscription_service.dart';
 import '../viewmodel/subscription_view_model.dart';
@@ -32,3 +33,10 @@ final subscriptionViewModelProvider = StateNotifierProvider.autoDispose
 final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
   return FirebaseFirestore.instance;
 });
+
+final activeSubscriptionProvider = FutureProvider.autoDispose
+    .family<Subscription?, String>((ref, userId) async {
+      final service = ref.watch(subscriptionServiceProvider);
+      final (subscription, _) = await service.getActiveSubscription(userId);
+      return subscription;
+    });

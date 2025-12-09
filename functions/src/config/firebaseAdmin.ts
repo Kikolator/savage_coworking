@@ -1,4 +1,5 @@
 import {App, getApps, initializeApp} from "firebase-admin/app";
+import {Auth, getAuth} from "firebase-admin/auth";
 import {Firestore, getFirestore} from "firebase-admin/firestore";
 
 let cachedApp: App | undefined;
@@ -24,4 +25,13 @@ function getOrInitApp(): App {
  */
 export function db(): Firestore {
   return getFirestore(getOrInitApp());
+}
+
+/**
+ * Returns the shared Auth instance for the initialized Admin app.
+ *
+ * @return {Auth} Auth connection for the singleton app.
+ */
+export function auth(): Auth {
+  return getAuth(getOrInitApp());
 }

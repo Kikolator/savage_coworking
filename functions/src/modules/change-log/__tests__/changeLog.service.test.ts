@@ -1,4 +1,3 @@
-/* eslint-disable require-jsdoc */
 import {
   Timestamp,
   DocumentData,
@@ -13,8 +12,8 @@ import {
   extractChangedFields,
   determineOperation,
   handleDocumentChange,
-} from "../changeLog.service";
-import * as changeLogRepository from "../changeLog.repository";
+} from "../changeLog.service.js";
+import * as changeLogRepository from "../changeLog.repository.js";
 
 vi.mock("../changeLog.repository", () => ({
   createEntry: vi.fn().mockResolvedValue(undefined),

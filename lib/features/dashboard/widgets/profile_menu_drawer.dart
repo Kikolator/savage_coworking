@@ -1,10 +1,13 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 import '../../../app/router/app_route.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../subscription/providers/subscription_providers.dart';
 
 class ProfileMenuDrawer extends ConsumerWidget {
   const ProfileMenuDrawer({super.key});
@@ -13,7 +16,15 @@ class ProfileMenuDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authViewModelProvider);
     final user = authState.user;
-    final isApplePlatform = Theme.of(context).platform == TargetPlatform.iOS ||
+
+    // Web always uses Material 3, regardless of underlying OS
+    if (kIsWeb) {
+      return _buildMaterialDrawer(context, ref, user);
+    }
+
+    // For native apps, check platform
+    final isApplePlatform =
+        Theme.of(context).platform == TargetPlatform.iOS ||
         Theme.of(context).platform == TargetPlatform.macOS;
 
     if (isApplePlatform) {
@@ -23,15 +34,22 @@ class ProfileMenuDrawer extends ConsumerWidget {
     }
   }
 
-  Widget _buildMaterialDrawer(
-    BuildContext context,
-    WidgetRef ref,
-    user,
-  ) {
+  Widget _buildMaterialDrawer(BuildContext context, WidgetRef ref, user) {
     return Drawer(
+      width: 304, // Explicit width to prevent expansion on wide screens
       child: SafeArea(
         child: Column(
           children: [
+            // Close button in upper left corner
+            Align(
+              alignment: Alignment.topLeft,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+                tooltip: 'Close',
+                padding: const EdgeInsets.all(16.0),
+              ),
+            ),
             _buildUserHeader(context, user),
             const Divider(),
             _buildMenuItem(
@@ -58,7 +76,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
               title: 'Preferences',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to preferences
+                context.go(AppRoute.settings.path);
               },
             ),
             if (user?.isAdmin == true) ...[
@@ -93,6 +111,31 @@ class ProfileMenuDrawer extends ConsumerWidget {
               },
             ),
             const Spacer(),
+            // Debug Tools section (only in debug mode and if not admin)
+            if (kDebugMode && user != null && !user.isAdmin) ...[
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'Debug Tools',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ),
+              _buildMenuItem(
+                context,
+                icon: Icons.admin_panel_settings,
+                title: 'Set Admin (DEBUG)',
+                onTap: () {
+                  Navigator.pop(context);
+                  _setCurrentUserAsAdmin(context, ref, user);
+                },
+              ),
+            ],
             const Divider(),
             _buildMenuItem(
               context,
@@ -113,15 +156,33 @@ class ProfileMenuDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildCupertinoDrawer(
-    BuildContext context,
-    WidgetRef ref,
-    user,
-  ) {
-    return CupertinoPageScaffold(
+  Widget _buildCupertinoDrawer(BuildContext context, WidgetRef ref, user) {
+    // Use Container with width constraint instead of CupertinoPageScaffold
+    // to prevent full-screen expansion
+    return Container(
+      width: 304, // Explicit width constraint
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground,
+        border: Border(
+          left: BorderSide(color: CupertinoColors.separator, width: 0.5),
+        ),
+      ),
       child: SafeArea(
         child: Column(
           children: [
+            // Close button in upper left corner
+            Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minSize: 0,
+                  child: const Icon(CupertinoIcons.xmark),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
             _buildUserHeader(context, user),
             const Divider(),
             _buildCupertinoMenuItem(
@@ -148,7 +209,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
               title: 'Preferences',
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to preferences
+                context.go(AppRoute.settings.path);
               },
             ),
             if (user?.isAdmin == true) ...[
@@ -183,6 +244,31 @@ class ProfileMenuDrawer extends ConsumerWidget {
               },
             ),
             const Spacer(),
+            // Debug Tools section (only in debug mode and if not admin)
+            if (kDebugMode && user != null && !user.isAdmin) ...[
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  'Debug Tools',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ),
+              _buildCupertinoMenuItem(
+                context,
+                icon: CupertinoIcons.person_badge_plus,
+                title: 'Set Admin (DEBUG)',
+                onTap: () {
+                  Navigator.pop(context);
+                  _setCurrentUserAsAdmin(context, ref, user);
+                },
+              ),
+            ],
             const Divider(),
             _buildCupertinoMenuItem(
               context,
@@ -237,8 +323,8 @@ class ProfileMenuDrawer extends ConsumerWidget {
             Text(
               user!.email,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -253,11 +339,7 @@ class ProfileMenuDrawer extends ConsumerWidget {
     required String title,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
-    );
+    return ListTile(leading: Icon(icon), title: Text(title), onTap: onTap);
   }
 
   Widget _buildCupertinoMenuItem(
@@ -272,5 +354,125 @@ class ProfileMenuDrawer extends ConsumerWidget {
       onTap: onTap,
     );
   }
-}
 
+  Future<void> _setCurrentUserAsAdmin(
+    BuildContext context,
+    WidgetRef ref,
+    user,
+  ) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Set Admin Claim (DEBUG)'),
+        content: Text(
+          'This will set admin custom claim for:\n\n'
+          'Email: ${user.email}\n'
+          'UID: ${user.id}\n\n'
+          '⚠️ This is a debug-only feature.\n'
+          'After setting, you must log out and back in for the change to take effect.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Set Admin'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading indicator
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 16),
+              Text('Setting admin claim...'),
+            ],
+          ),
+          duration: Duration(seconds: 30),
+        ),
+      );
+    }
+
+    try {
+      final functionsService = ref.read(firebaseFunctionsServiceProvider);
+
+      final result = await functionsService.callFunction<Map<String, dynamic>>(
+        functionName: 'setAdminClaim',
+        data: {'uid': user.id, 'isAdmin': true},
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        if (result['success'] == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Admin claim set successfully! Please log out and back in for it to take effect.',
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 5),
+              action: SnackBarAction(
+                label: 'Logout',
+                textColor: Colors.white,
+                onPressed: () async {
+                  await ref.read(authViewModelProvider.notifier).logout();
+                  if (context.mounted) {
+                    context.go('/auth');
+                  }
+                },
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to set admin claim'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.message ?? e.code}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unexpected error: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
-import {Timestamp} from "firebase-admin/firestore";
-import {db} from "../../config/firebaseAdmin";
+import {Timestamp, QueryDocumentSnapshot} from "firebase-admin/firestore";
+import {db} from "../../config/firebaseAdmin.js";
 import {
   SUBSCRIPTIONS_COLLECTION,
   SUBSCRIPTION_PLANS_COLLECTION,
@@ -9,7 +9,7 @@ import {
   SubscriptionPlanCreateDto,
   SubscriptionUpdateDto,
   SubscriptionPlanUpdateDto,
-} from "./subscription.types";
+} from "./subscription.types.js";
 
 const subscriptionsCol = () => db().collection(SUBSCRIPTIONS_COLLECTION);
 const plansCol = () => db().collection(SUBSCRIPTION_PLANS_COLLECTION);
@@ -109,22 +109,27 @@ export async function createSubscription(
   const hasActive = await hasActiveSubscription(dto.userId);
   if (hasActive) {
     throw new Error(
-      "User already has an active subscription. Only one active subscription allowed per user.",
+      "User already has an active subscription. " +
+        "Only one active subscription allowed per user.",
     );
   }
 
   const now = Timestamp.now();
-  
+
   // Determine initial status:
-  // - If it has a Stripe subscription ID (from webhook), it's active (payment succeeded)
+  // - If it has a Stripe subscription ID (from webhook),
+  //   it's active (payment succeeded)
   // - Otherwise, it's a trial (manual creation or test)
   const initialStatus: "active" | "trial" =
     dto.stripeSubscriptionId ? "active" : "trial";
-  
+
   // Calculate effective quota (plan quota + overrides)
   const effectiveQuota = {
-    deskHoursPerPeriod: dto.overrides?.deskHoursPerPeriod ?? plan.quota.deskHoursPerPeriod,
-    meetingHoursPerPeriod: dto.overrides?.meetingHoursPerPeriod ?? plan.quota.meetingHoursPerPeriod,
+    deskHoursPerPeriod:
+      dto.overrides?.deskHoursPerPeriod ?? plan.quota.deskHoursPerPeriod,
+    meetingHoursPerPeriod:
+      dto.overrides?.meetingHoursPerPeriod ??
+      plan.quota.meetingHoursPerPeriod,
     access: plan.quota.access,
     seatType: plan.quota.seatType,
   };
@@ -214,7 +219,7 @@ export async function findActivePlans(): Promise<SubscriptionPlan[]> {
     .where("isActive", "==", true)
     .orderBy("price", "asc")
     .get();
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...(doc.data() as Omit<SubscriptionPlan, "id">),
   }));
@@ -226,7 +231,7 @@ export async function findActivePlans(): Promise<SubscriptionPlan[]> {
  */
 export async function findAllPlans(): Promise<SubscriptionPlan[]> {
   const snap = await plansCol().orderBy("createdAt", "desc").get();
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...(doc.data() as Omit<SubscriptionPlan, "id">),
   }));

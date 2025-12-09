@@ -1,5 +1,5 @@
-import {db} from "../../config/firebaseAdmin";
-import {CHANGE_LOG_COLLECTION, ChangeLogEntry} from "./changeLog.types";
+import {db} from "../../config/firebaseAdmin.js";
+import {CHANGE_LOG_COLLECTION, ChangeLogEntry} from "./changeLog.types.js";
 
 /**
  * Persists a new entry in the changeLogs collection.

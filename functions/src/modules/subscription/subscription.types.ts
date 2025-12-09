@@ -49,7 +49,8 @@ export interface Access {
 export interface Quota {
   dayPassCredits?: number; // Number of daypass credits (for dayPass plans)
   deskHoursPerPeriod?: number; // Desk hours per period (0 = unlimited)
-  meetingHoursPerPeriod?: number; // Meeting room hours per period (0 = unlimited)
+  // Meeting room hours per period (0 = unlimited)
+  meetingHoursPerPeriod?: number;
   access: Access;
   seatType?: SeatType; // 'hot' or 'fixed' (for fix plans)
 }
@@ -67,7 +68,8 @@ export interface External {
 
 export interface Overrides {
   deskHoursPerPeriod?: number; // Override desk hours (admin-only, permanent)
-  meetingHoursPerPeriod?: number; // Override meeting room hours (admin-only, permanent)
+  // Override meeting room hours (admin-only, permanent)
+  meetingHoursPerPeriod?: number;
   // Other overrides can be added here
 }
 

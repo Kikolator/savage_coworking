@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../core/debug/debug_utils.dart';
 import '../models/auth_user.dart';
 import '../models/auth_failure.dart';
 import '../repository/auth_repository.dart';
@@ -15,10 +16,7 @@ class AuthService {
     required String email,
     required String password,
   }) {
-    return _authRepo.signInWithEmailPassword(
-      email: email,
-      password: password,
-    );
+    return _authRepo.signInWithEmailPassword(email: email, password: password);
   }
 
   Future<(AuthUser?, AuthFailure?)> signUp({
@@ -74,12 +72,23 @@ class AuthService {
   /// Switches the selected workspace for the current user.
   /// Updates the user document with the new selectedWorkspaceId.
   Future<String?> switchWorkspace(String userId, String workspaceId) async {
+    debugLog('AuthService', 'Switching workspace', {
+      'userId': userId,
+      'workspaceId': workspaceId,
+    });
+
     try {
       await _userRepo.updateSelectedWorkspace(userId, workspaceId);
+
+      debugLog('AuthService', 'Successfully switched workspace', {
+        'userId': userId,
+        'workspaceId': workspaceId,
+      });
+
       return null;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugError('AuthService', 'Failed to switch workspace', e, stackTrace);
       return 'Failed to switch workspace: ${e.toString()}';
     }
   }
 }
-

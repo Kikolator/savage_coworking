@@ -1,8 +1,11 @@
-import {db} from "../../config/firebaseAdmin";
-import * as subscriptionRepo from "../subscription/subscription.repository";
-import * as passBundleRepo from "../subscription/pass-bundle.repository";
-import * as usageRepo from "../subscription/usage.repository";
-import {MembershipSummary} from "../subscription/subscription.types";
+import {db} from "../../config/firebaseAdmin.js";
+import * as subscriptionRepo from "../subscription/subscription.repository.js";
+import * as passBundleRepo from "../subscription/pass-bundle.repository.js";
+import * as usageRepo from "../subscription/usage.repository.js";
+import {
+  MembershipSummary,
+  PassBundle,
+} from "../subscription/subscription.types.js";
 
 const usersCol = () => db().collection("users");
 
@@ -14,9 +17,8 @@ export async function calculateMembershipSummary(
   userId: string,
 ): Promise<MembershipSummary | null> {
   // Get active subscription
-  const activeSubscription = await subscriptionRepo.findActiveSubscriptionByUserId(
-    userId,
-  );
+  const activeSubscription =
+    await subscriptionRepo.findActiveSubscriptionByUserId(userId);
 
   // Get active pass bundles
   const activePassBundles = await passBundleRepo.findActivePassBundlesByUserId(
@@ -25,7 +27,7 @@ export async function calculateMembershipSummary(
 
   // Calculate remaining daypass credits
   const remainingDayPassCredits = activePassBundles.reduce(
-    (sum, bundle) => sum + bundle.remainingCredits,
+    (sum: number, bundle: PassBundle) => sum + bundle.remainingCredits,
     0,
   );
 
@@ -48,7 +50,8 @@ export async function calculateMembershipSummary(
   let deskMinutesRemaining: number | undefined;
   let meetingMinutesRemaining: number | undefined;
 
-  const deskHoursPerPeriod = activeSubscription.effectiveQuota.deskHoursPerPeriod;
+  const deskHoursPerPeriod =
+    activeSubscription.effectiveQuota.deskHoursPerPeriod;
   const meetingHoursPerPeriod =
     activeSubscription.effectiveQuota.meetingHoursPerPeriod;
 
@@ -96,7 +99,7 @@ export async function updateUserMembershipSummary(
   const summary = await calculateMembershipSummary(userId);
 
   const userRef = usersCol().doc(userId);
-  const updateData: {membership?: MembershipSummary} = {};
+  const updateData: {membership?: MembershipSummary | null} = {};
 
   if (summary) {
     // Only set membership if there's meaningful data
@@ -108,11 +111,11 @@ export async function updateUserMembershipSummary(
       updateData.membership = summary;
     } else {
       // Remove membership if user has no active subscription or pass bundles
-      updateData.membership = null as any; // Firestore null
+      updateData.membership = null; // Firestore null
     }
   } else {
     // Remove membership
-    updateData.membership = null as any; // Firestore null
+    updateData.membership = null; // Firestore null
   }
 
   await userRef.update(updateData);

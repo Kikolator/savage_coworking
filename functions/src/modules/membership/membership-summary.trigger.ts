@@ -1,5 +1,5 @@
 import {onDocumentWritten} from "firebase-functions/v2/firestore";
-import {updateUserMembershipSummary} from "./membership-summary.service";
+import {updateUserMembershipSummary} from "./membership-summary.service.js";
 
 /**
  * Trigger to update membership summary when subscription changes.
@@ -7,7 +7,7 @@ import {updateUserMembershipSummary} from "./membership-summary.service";
 export const onSubscriptionChange = onDocumentWritten(
   {
     document: "subscriptions/{subscriptionId}",
-    region: "us-central1",
+    region: "europe-west1",
   },
   async (event) => {
     const subscriptionData = event.data?.after?.data();
@@ -36,7 +36,7 @@ export const onSubscriptionChange = onDocumentWritten(
 export const onPassBundleChange = onDocumentWritten(
   {
     document: "passBundles/{bundleId}",
-    region: "us-central1",
+    region: "europe-west1",
   },
   async (event) => {
     const bundleData = event.data?.after?.data();
@@ -65,7 +65,7 @@ export const onPassBundleChange = onDocumentWritten(
 export const onUsageChange = onDocumentWritten(
   {
     document: "usage/{usageId}",
-    region: "us-central1",
+    region: "europe-west1",
   },
   async (event) => {
     const usageData = event.data?.after?.data();

@@ -1,11 +1,11 @@
-import {Timestamp} from "firebase-admin/firestore";
-import {db} from "../../config/firebaseAdmin";
+import {Timestamp, QueryDocumentSnapshot} from "firebase-admin/firestore";
+import {db} from "../../config/firebaseAdmin.js";
 import {
   USAGE_COLLECTION,
   Usage,
   UsageCreateDto,
   UsageUpdateDto,
-} from "./subscription.types";
+} from "./subscription.types.js";
 
 const usageCol = () => db().collection(USAGE_COLLECTION);
 
@@ -28,7 +28,7 @@ export async function findUsageByUserId(
     .where("userId", "==", userId)
     .orderBy("periodStart", "desc")
     .get();
-  return snap.docs.map((doc) => ({
+  return snap.docs.map((doc: QueryDocumentSnapshot) => ({
     id: doc.id,
     ...(doc.data() as Omit<Usage, "id">),
   }));

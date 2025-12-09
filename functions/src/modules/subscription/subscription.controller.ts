@@ -1,12 +1,12 @@
 import {Request, Response} from "express";
 import {Timestamp} from "firebase-admin/firestore";
-import * as subscriptionService from "./subscription.service";
+import * as subscriptionService from "./subscription.service.js";
 import {
   SubscriptionCreateDto,
   SubscriptionUpdateDto,
   SubscriptionPlanCreateDto,
   SubscriptionPlanUpdateDto,
-} from "./subscription.types";
+} from "./subscription.types.js";
 
 /**
  * Converts a timestamp representation to a Timestamp object.
@@ -215,7 +215,9 @@ export async function updateSubscriptionHoursController(
     // Hours usage is now tracked in the Usage collection, not in subscriptions
     // This endpoint has been removed. Use the Usage API instead.
     res.status(410).json({
-      message: "DEPRECATED: Use Usage API to track hours. This endpoint is no longer available.",
+      message:
+        "DEPRECATED: Use Usage API to track hours. " +
+        "This endpoint is no longer available.",
     });
     return;
   } catch (err: unknown) {
