@@ -15,6 +15,7 @@ import 'package:savage_coworking/features/billing/view/billing_view.dart';
 
 import 'app_route.dart';
 import 'go_router_refresh_stream.dart';
+import 'page_transitions.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -29,12 +30,20 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoute.splash.path,
         name: AppRoute.splash.name,
-        builder: (context, state) => const SplashView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const SplashView(),
+        ),
       ),
       GoRoute(
         path: AppRoute.auth.path,
         name: AppRoute.auth.name,
-        builder: (context, state) => const AuthView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const AuthView(),
+        ),
       ),
       ShellRoute(
         builder: (context, state, child) => DashboardView(child: child),
@@ -42,17 +51,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoute.home.path,
             name: AppRoute.home.name,
-            builder: (context, state) => const HomeView(),
+            pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const HomeView(),
+            ),
           ),
           GoRoute(
             path: AppRoute.hotDesk.path,
             name: AppRoute.hotDesk.name,
-            builder: (context, state) => const HotDeskBookingView(),
+            pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const HotDeskBookingView(),
+            ),
           ),
           GoRoute(
             path: AppRoute.bookings.path,
             name: AppRoute.bookings.name,
-            builder: (context, state) => const BookingsView(),
+            pageBuilder: (context, state) => buildPageWithTransition(
+              context: context,
+              state: state,
+              child: const BookingsView(),
+            ),
           ),
         ],
       ),
@@ -60,24 +81,43 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoute.settings.path,
         name: AppRoute.settings.name,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SettingsView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const SettingsView(),
+          isModal: true,
+        ),
       ),
       GoRoute(
         path: AppRoute.subscriptions.path,
         name: AppRoute.subscriptions.name,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SubscriptionView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const SubscriptionView(),
+          isModal: true,
+        ),
       ),
       GoRoute(
         path: AppRoute.billing.path,
         name: AppRoute.billing.name,
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BillingView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const BillingView(),
+          isModal: true,
+        ),
       ),
       GoRoute(
         path: AppRoute.admin.path,
         name: AppRoute.admin.name,
-        builder: (context, state) => const AdminDashboardView(),
+        pageBuilder: (context, state) => buildPageWithTransition(
+          context: context,
+          state: state,
+          child: const AdminDashboardView(),
+        ),
       ),
     ],
     redirect: (context, state) {
